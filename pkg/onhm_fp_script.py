@@ -22,7 +22,7 @@ def main():
             numdays = int(arg)
     print("numdays = ", numdays)
 
-    print('starting Script')
+    print('starting script')
 
     fp = FpoNHM(numdays)
     print('instantiated')
