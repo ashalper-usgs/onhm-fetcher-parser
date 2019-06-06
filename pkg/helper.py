@@ -3,7 +3,6 @@ from rasterio.transform import from_origin
 import numpy as np
 import datetime as dt
 
-
 def gridmet_nc_to_geotiff(ds, time_index, path, filename, dsname):
 
     # collect data to describe geotransform
@@ -34,7 +33,6 @@ def gridmet_nc_to_geotiff(ds, time_index, path, filename, dsname):
     new_dataset.write(ud, 1)
     new_dataset.close()
 
-
 def np_get_wval(ndata, wghts):
     """
     Returns weighted average of ndata with weights = grp
@@ -46,7 +44,6 @@ def np_get_wval(ndata, wghts):
     mdata = np.ma.masked_array(ndata[wghts['grid_ids'].values.astype(int)],
                                np.isnan(ndata[wghts['grid_ids'].values.astype(int)]))
     return np.ma.average(mdata, weights=wghts['w'])
-
 
 def get_gm_url(numdays, dataset, ctype='GridMetSS'):
     """

@@ -16,7 +16,7 @@ def gridmet_nc_to_geotiff(ds, time_index, path, filename, dsname ):
     lonshape = ts['lon']
     latshape = ts['lat']
 
-    #get transform
+    # get transform
     transform = from_origin(lonmin, latmax, lonres, latres)
 
     # create geodiff from netcdf data
