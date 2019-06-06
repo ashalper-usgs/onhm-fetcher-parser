@@ -43,7 +43,7 @@ class FpoNHM:
                 'tmin': 'daily_minimum_temperature',
                 'ppt': 'precipitation_amount'}
         self.numdays = numdays
-        # xarray containers for tempurature max, temperature min and precipitation
+        # xarray containers for temperature max., temperature min. and precipitation
         self.dstmax = None
         self.dstmin = None
         self.dsppt = None
@@ -74,7 +74,7 @@ class FpoNHM:
         # num HRUs
         self.num_hru = None
 
-        # grouby hru_id_nat on wieghts file
+        # group by hru_id_nat on weights file
         self.unique_hru_ids = None
 
         # numpy arrays to store mapped climate data
@@ -82,7 +82,7 @@ class FpoNHM:
         self.np_tmin = None
         self.np_ppt = None
 
-        #Starting date based in numdays
+        # starting date based in numdays
         self.str_start = None
 
     def initialize(self, iptpath, optpath):
@@ -192,7 +192,7 @@ class FpoNHM:
         self.unique_hru_ids = wght_uofi.groupby('hru_id_nat')
         print('finished reading weight file')
 
-        # intialize numpy arrays to store climate vars
+        # initialize numpy arrays to store climate vars
         self.np_tmax = np.zeros((self.numdays,self.num_hru))
         self.np_tmin = np.zeros((self.numdays,self.num_hru))
         self.np_ppt = np.zeros((self.numdays,self.num_hru))
@@ -224,7 +224,7 @@ class FpoNHM:
             self.np_tmin[day, :] = tmin
             self.np_ppt[day, :] = ppt
 
-        # close xarray datasets
+        # close xarray data sets
         self.dstmax.close()
         self.dstmin.close()
         self.dsppt.close()
@@ -244,7 +244,8 @@ class FpoNHM:
 
         sp_dim = len(self.gdf.index)
         hruid_dim = ncfile.createDimension('hruid', sp_dim)  # hru_id
-        time_dim = ncfile.createDimension('time', self.numdays)  # unlimited axis (can be appended to).
+        # unlimited axis (can be appended to)
+        time_dim = ncfile.createDimension('time', self.numdays)
         for dim in ncfile.dimensions.items():
             print(dim)
 
