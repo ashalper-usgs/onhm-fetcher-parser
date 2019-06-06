@@ -22,10 +22,8 @@ def main():
             numdays = int(arg)
     print("numdays = ", numdays)
 
-
-
     print('starting Script')
-    #numdays = 2
+
     fp = FpoNHM(numdays)
     print('instantiated')
     ready = fp.initialize(r'../Data', r'../Output')
@@ -45,5 +43,6 @@ def main():
         print('finished running')
         fp.finalize()
         print('finalized')
+
 if __name__ == "__main__":
     main()

@@ -3,17 +3,15 @@ import pandas as pd
 import netCDF4
 import numpy as np
 import glob
-#import rasterio
 import os
 import xarray as xr
 import json
 from rasterstats import zonal_stats
 
-#from rasterio.transform import from_origin
+# from rasterio.transform import from_origin
 from helper import np_get_wval, get_gm_url
 import requests
 from requests.exceptions import HTTPError
-
 
 class FpoNHM:
     """ Class for fetching climate data and parsing into netcdf
@@ -296,15 +294,10 @@ class FpoNHM:
         lon[:] = tlon
         lat[:] = tlat
         hru[:] = self.gdf['hru_id_nat'].values
-        # print(hruid)
-        # tmax[0,:] = gdf['tmax'].values
-        # tmin[0,:] = gdf['tmin'].values
-        # prcp[0,:] = gdf['ppt'].values
 
         tmax[:, :] = self.np_tmax[:, :]
         tmin[:, :] = self.np_tmin[:, :]
         prcp[:, :] = self.np_ppt[:, :]
-
 
         ncfile.close()
         print("dataset is closed")

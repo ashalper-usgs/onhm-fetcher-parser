@@ -1,4 +1,3 @@
-
 import geopandas as gpd
 import pandas as pd
 import netCDF4
@@ -82,7 +81,6 @@ dayshape = ts['day']
 lonshape = ts['lon']
 latshape = ts['lat']
 
-
 #=========================================================
 #       Read hru weights
 #=========================================================
@@ -136,10 +134,7 @@ for index, row in gdf.iterrows():
         gdf.loc[gdf.index[tind], 'ppt'] = 0
     tind += 1
 
-
-
-# try: ncfile.close() # just to be safe, make sure dataset is not already open.
-# except: pass
+# just to be safe, make sure dataset is not already open.
 print('zcount = ', zcount)
 ncfile = netCDF4.Dataset('new.nc',mode='w',format='NETCDF4_CLASSIC')
 
@@ -154,7 +149,7 @@ time_dim = ncfile.createDimension('time', None) # unlimited axis (can be appende
 for dim in ncfile.dimensions.items():
     print(dim)
 
-#Create Variables
+# create variables
 time = ncfile.createVariable('time', np.int, ('time', ))
 time.long_name = 'time'
 time.standard_name = 'time'
@@ -194,11 +189,11 @@ def getXY(pt):
     return (pt.x, pt.y)
 centroidseries = gdf['geometry'].centroid
 tlon, tlat = [list(t) for t  in zip(*map(getXY, centroidseries))]
-# print(lon, lat)
+
 lon[:] = tlon
 lat[:] = tlat
 hru[:] = gdf['hru_id_nat'].values
-# print(hruid)
+
 tmax[0,:] = gdf['tmax'].values
 tmin[0,:] = gdf['tmin'].values
 prcp[0,:] = gdf['ppt'].values

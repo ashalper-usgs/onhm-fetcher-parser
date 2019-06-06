@@ -1,4 +1,3 @@
-
 import geopandas as gpd
 import pandas as pd
 import netCDF4
@@ -28,7 +27,7 @@ def np_get_wval(grp, ndata):
                                np.isnan(ndata[grp['grid_ids'].values.astype(int)]))
     return np.ma.average(mdata, weights=grp['w'])
 
-# Some constants
+# constant
 ktoc=273.15
 
 #=========================================================
@@ -53,7 +52,6 @@ print('finished reading shapefiles')
 gdf['tmax']=None
 gdf['tmin']=None
 gdf['ppt']=None
-
 
 #=========================================================
 #            GET CLIMATE DATA
@@ -88,15 +86,14 @@ dayshape = ts['day']
 lonshape = ts['lon']
 latshape = ts['lat']
 
-
 #=========================================================
 #       Read hru weights
 #=========================================================
 
-# wght_df_40 = pd.read_csv(r'./Data/hru_metdata_weights_40m.csv')
 wght_UofI = pd.read_csv('../Data/hru_uofimetdata_weights.csv')
 print('finished reading weight file')
 unique_hru_ids = wght_UofI.groupby('hru_id_nat')
+
 #=========================================================
 #       Iterate over hrus and assign tmax, tmin, ppt
 #       based on weight file
@@ -122,48 +119,13 @@ for index, row in gdf.iterrows():
     np_tmax[index] = np_get_wval(weight_id_rows, tmax_h_flt) - 273.5
     np_tmin[index] = np_get_wval(weight_id_rows, tmin_h_flt) - 273.5
     np_ppt[index] = np_get_wval(weight_id_rows, tppt_h_flt)
-#     ttmax = ttmin = tppt = 0.0
-#     tmaxwght = tminwght = pptwght =0.0
-#     tcount = 0
-#
-#     # based on metadata of the netcdf file the shape of the netcdf array is day,lat(y),lon(x)
-#     for ind2, rw2 in weight_id_rows.iterrows():
-# #           print(rw2['Y_ind'],rw2['X_ind'])
-#         tmaxv, tmaxwt = testnan(tmax_h.values[dayshape - 1, int(rw2['Y_ind'])-1, int(rw2['X_ind'])-1], rw2['w'])
-#         if tmaxwt > 0.0:
-#             ttmax += tmaxwt * tmaxv
-#             tmaxwght += tmaxwt
-#             tcount += 1
-#         tminv, tminwt = testnan(tmin_h.values[dayshape - 1, int(rw2['Y_ind'])-1, int(rw2['X_ind'])-1], rw2['w'])
-#         if tminwt > 0.0:
-#             ttmin += tminwt * tminv
-#             tminwght += tminwt
-#
-#         pptv, pptwt = testnan(tppt_h.values[dayshape - 1, int(rw2['Y_ind']-1), int(rw2['X_ind'])-1], rw2['w'])
-#         if pptwt > 0.0:
-#             tppt += pptwt * pptv
-#             pptwght += pptwt
+
     if index % 10000 == 0:
         print(index, row['hru_id_nat'])
-#     if len(weight_id_rows) > 0 and (tmaxwght or tminwght or pptwght > 0.0):
-#         if tmaxwght <= 0.0 or tminwght <= 0.0 or pptwght <= 0.0:
-#             print(tind, row['hru_id_nat'], rw2['w'],
-#                   ttmax, tmaxwght, ttmin,
-#                   tminwght, tppt, pptwght)
-#         gdf.loc[gdf.index[tind], 'tmax'] = ((ttmax / tmaxwght) - ktoc)
-#         gdf.loc[gdf.index[tind], 'tmin'] = ((ttmin / tminwght) - ktoc)
-#         gdf.loc[gdf.index[tind], 'ppt'] = tppt / pptwght
-#     else:
-#         zcount += 1
-#         gdf.loc[gdf.index[tind], 'tmax'] = 0
-#         gdf.loc[gdf.index[tind], 'tmin'] = 0
-#         gdf.loc[gdf.index[tind], 'ppt'] = 0
+
     tind += 1
 
-
-
-# try: ncfile.close() # just to be safe, make sure dataset is not already open.
-# except: pass
+# just to be safe, make sure dataset is not already open
 print('zcount = ', zcount)
 ncfile = netCDF4.Dataset('new.nc',mode='w',format='NETCDF4_CLASSIC')
 
@@ -178,7 +140,7 @@ time_dim = ncfile.createDimension('time', None) # unlimited axis (can be appende
 for dim in ncfile.dimensions.items():
     print(dim)
 
-#Create Variables
+# create variables
 time = ncfile.createVariable('time', np.int, ('time', ))
 time.long_name = 'time'
 time.standard_name = 'time'
@@ -218,14 +180,10 @@ def getXY(pt):
     return (pt.x, pt.y)
 centroidseries = gdf['geometry'].centroid
 tlon, tlat = [list(t) for t  in zip(*map(getXY, centroidseries))]
-# print(lon, lat)
+
 lon[:] = tlon
 lat[:] = tlat
 hru[:] = gdf['hru_id_nat'].values
-# print(hruid)
-# tmax[0,:] = gdf['tmax'].values
-# tmin[0,:] = gdf['tmin'].values
-# prcp[0,:] = gdf['ppt'].values
 
 tmax[0,:] = np_tmax
 tmin[0,:] = np_tmin
