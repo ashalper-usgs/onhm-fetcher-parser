@@ -1,0 +1,22 @@
+name: ofp_env
+channels:
+- defaults
+- conda-forge
+dependencies:
+- python=3.6
+- matplotlib
+- numpy
+- pandas
+- xarray
+- dask
+- bottleneck
+- jupyter
+- notebook=5.7.4
+- cartopy
+- scipy
+- rasterio
+- rasterstats
+- geopandas
+- netcdf4
+- docker-py
+- xmltodict
