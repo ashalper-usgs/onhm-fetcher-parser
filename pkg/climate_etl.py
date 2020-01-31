@@ -24,18 +24,10 @@ def main():
     my_parser = argparse.ArgumentParser(prog='climate_etl',
                                     description='map gridded climate data to polygon using zonal area weighted mean')
 
-    # my_parser.add_argument('-s', '--startdate', type=valid_date,
-    #                        help='option: start date of retrieval (YYYY-MM-DD); requires -e (end_date)',
-    #                        metavar='start_date',
-    #                        default=None)
-    #
-    # my_parser.add_argument('-e', '--enddate', type=valid_date,
-    #                        help='option: end date of retrieval (YYYY-MM-DD); requires -s (start_date)',
-    #                        metavar='end_date',
-    #                        default=None)
     my_parser.add_argument('-t', '--extract_type', type=str,
                            help='extract method: (days) or (date)', metavar='input_path',
                            default=None, required=True, choices=['days', 'date'])
+
     my_parser.add_argument('-p', '--period', type=valid_date,
                            help='option: start date and end date of retrieval (YYYY-MM-DD)',
                            metavar='date',
@@ -66,11 +58,10 @@ def main():
 
     if all(i is not None for i  in [args.period, args.days]):
         my_parser.error('Either the --days or --period option must be specified not both')
+
     if all(i is None for i in [args.period, args.days]):
         my_parser.error('Either the --days or --period option must be specified')
-    # if args.period is not None:
-    #     startdate = args.period[0]
-    #     enddate = args.period[1]
+
     if args.extract_type is not None:
         extract_type = args.extract_type
         if args.extract_type == 'days':
@@ -97,13 +88,12 @@ def main():
         file_prefix = args.file_prefix
     test = 0
 
-
     print('starting Script')
-    #numdays = 2
+
     fp = FpoNHM()
+
     print('instantiated')
-    #initialize(self, iptpath, optpath, weights_file, type=None, days=None, start_date=None, end_date=None)
-    # ready = fp.initialize(idir, odir, wght_file, extract_type, numdays, startdate, enddate, file_prefix)
+
     ready = fp.initialize(idir, odir, wght_file, type=extract_type, days=numdays,
                           start_date=startdate, end_date=enddate,
                           fileprefix=file_prefix)
@@ -127,7 +117,7 @@ def main():
             print('finalized')
             sys.exit(0)
         else:
-            print('error: extract did not return period specified, Gridmet no updated')
+            print('error: extract did not return period specified, Gridmet not updated')
             sys.exit(1)
 
 if __name__ == "__main__":
