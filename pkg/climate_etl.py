@@ -85,7 +85,6 @@ def main():
         wght_file = args.weightsfile
     if args.file_prefix is not None:
         file_prefix = args.file_prefix
-    test = 0
 
     print('starting Script', flush=True)
     fp = FpoNHM()
