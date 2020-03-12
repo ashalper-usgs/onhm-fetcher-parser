@@ -1,6 +1,5 @@
 from fponhm import FpoNHM
-import sys, getopt
-from pathlib import Path
+import sys
 import datetime
 import argparse
 
