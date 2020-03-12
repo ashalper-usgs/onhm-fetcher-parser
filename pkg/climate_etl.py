@@ -88,36 +88,35 @@ def main():
         file_prefix = args.file_prefix
     test = 0
 
-    print('starting Script')
-
+    print('starting Script', flush=True)
     fp = FpoNHM()
 
-    print('instantiated')
+    print('instantiated', flush=True)
 
     ready = fp.initialize(idir, odir, wght_file, type=extract_type, days=numdays,
                           start_date=startdate, end_date=enddate,
                           fileprefix=file_prefix)
     if ready:
-        print('initalized\n')
-        print('running')
+        print('initalized\n', flush=True)
+        print('running', flush=True)
         fp.run_weights()
-        print('finished running')
+        print('finished running', flush=True)
         fp.finalize()
-        print('finalized')
+        print('finalized', flush=True)
         sys.exit(0)
     else:
         if extract_type == 'days':
-            print('Gridmet not updated continue with numdays -1')
+            print('Gridmet not updated continue with numdays -1', flush=True)
             fp.setNumdays(numdays-1)
-            print('initalized\n')
-            print('running')
+            print('initalized\n', flush=True)
+            print('running', flush=True)
             fp.run_weights()
-            print('finished running')
+            print('finished running', flush=True)
             fp.finalize()
-            print('finalized')
+            print('finalized', flush=True)
             sys.exit(0)
         else:
-            print('error: extract did not return period specified, Gridmet not updated')
+            print('error: extract did not return period specified, Gridmet not updated', flush=True)
             sys.exit(1)
 
 if __name__ == "__main__":
