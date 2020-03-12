@@ -41,6 +41,7 @@ class FpoNHM:
                 'rhmax': 'daily_maximum_relative_humidity',
                 'rhmin': 'daily_minimum_relative_humidity',
                 'ws': 'daily_mean_wind_speed'}
+            
         # type of retrieval (days) retrieve by previous number of days - used in operational mode
         # or (date) used to retrieve specific period of time
         self.type = None
@@ -126,15 +127,15 @@ class FpoNHM:
         
         self.iptpath = Path(iptpath)
         if not self.iptpath.exists():
-            sys.exit("input path does not exist")
+            sys.exit(f'input directory "{iptpath}" does not exist')
 
         self.optpath = Path(optpath)
         if not self.optpath.exists():
-            sys.exit("output path does not exist") 
+            sys.exit(f'output directory "{optpath}" does not exist')
 
         self.wghts_file = Path(weights_file)
         if not self.wghts_file.exists():
-            sys.exit("weights file not exist") 
+            sys.exit(f'weights file "{weights_file}" not exist') 
             
         self.wghts_id = None
         self.type = type
