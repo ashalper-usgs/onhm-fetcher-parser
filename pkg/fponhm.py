@@ -167,8 +167,11 @@ class FpoNHM:
         filenames = sorted(self.iptpath.glob('*.shp'))
         self.gdf = pd.concat([gpd.read_file(f) for f in filenames], sort=True).pipe(gpd.GeoDataFrame)
         self.gdf.reset_index(drop=True, inplace=True)
-        print(filenames, flush=True)
-        print(self.gdf.head(), flush=True)
+        
+        for f in filenames:
+            self.logger.info(f)
+            
+        self.logger.info(self.gdf.head())
 
         self.num_hru = len(self.gdf.index)
         tmaxfile = None
@@ -198,32 +201,32 @@ class FpoNHM:
                                                            self.start_date, self.end_date)
             pptfile = requests.get(ppturl, params=pptparams)
             pptfile.raise_for_status()
-            #Maximum Relative Humidity
+            # Maximum Relative Humidity
             self.str_start, rhmaxurl, rhmaxparams = get_gm_url(self.type, 'rhmax', self.numdays,
                                                            self.start_date, self.end_date)
             rhmaxfile = requests.get(rhmaxurl, params=rhmaxparams)
             rhmaxfile.raise_for_status()
-            #Minimum Relative Humidity
+            # Minimum Relative Humidity
             self.str_start, rhminurl, rhminparams = get_gm_url(self.type, 'rhmin', self.numdays,
                                                            self.start_date, self.end_date)
             rhminfile = requests.get(rhminurl, params=rhminparams)
             rhminfile.raise_for_status()
-            #Mean daily Wind Speed
+            # Mean daily Wind Speed
             self.str_start, wsurl, wsparams = get_gm_url(self.type, 'ws', self.numdays,
                                                            self.start_date, self.end_date)
             wsfile = requests.get(wsurl, params=wsparams)
             wsfile.raise_for_status()
 
         except HTTPError as http_err:
-            print(f'HTTP error occured: {http_err}', flush=True)
+            self.logger.error(f'HTTP error occured: {http_err}')
             if self.numdays == 1:
                 sys.exit("numdays == 1: Gridmet not updated")
             else:
                 sys.exit("GridMet not available or a bad request")
         except Exception as err:
-            print(f'Other error occured: {err}', flush=True)
+            self.logger.error(f'Other error occured: {err}')
         else:
-            print('Gridmet data retrieved!', flush=True)
+            self.logger.info('Gridmet data retrieved')
 
         # write downloaded data to local NetCDF files and open as xarray
         ncfile = (self.iptpath / (self.fileprefix + 'tmax_' + (datetime.now().strftime('%Y_%m_%d')) + '.nc'),
