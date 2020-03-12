@@ -1,0 +1,13 @@
+#! /bin/sh
+#
+#  File - run
+#
+#  Purpose - Test ofp.
+#
+#  Author - Andrew Halper <ashalper@usgs.gov>
+#
+
+/opt/conda/bin/python \
+  -u ../pkg/climate_etl.py -t date \
+  -p 2019-08-21 2019-08-22 -i /tmp/nhm/ofp/nhm_hru_data \
+  -o /tmp/nhm/NHM-PRMS_CONUS/input -w /tmp/nhm/ofp/nhm_hru_data/weights.csv
