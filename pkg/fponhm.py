@@ -123,23 +123,18 @@ class FpoNHM:
         :param optpath: directory to save NetCDF input files
         :return: success or failure
         """
+        
         self.iptpath = Path(iptpath)
-        if self.iptpath.exists():
-            print('input path exits', flush=True)
-        else:
-            print('input path does not exist', flush=True)
+        if not self.iptpath.exists():
+            sys.exit("input path does not exist")
 
         self.optpath = Path(optpath)
-        if self.optpath.exists():
-            print('output path exits', flush=True)
-        else:
-            print('output path does not exist', flush=True)
+        if not self.optpath.exists():
+            sys.exit("output path does not exist") 
 
         self.wghts_file = Path(weights_file)
-        if self.wghts_file.exists():
-            print('weights file exits', self.wghts_file, flush=True)
-        else:
-            print('weights file not exist', flush=True)
+        if not self.wghts_file.exists():
+            sys.exit("weights file not exist") 
             
         self.wghts_id = None
         self.type = type
