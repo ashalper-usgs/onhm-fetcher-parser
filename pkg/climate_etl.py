@@ -2,6 +2,7 @@ from fponhm import FpoNHM
 import sys
 import datetime
 import argparse
+import logging
 
 def valid_date(s):
     try:
@@ -86,35 +87,41 @@ def main():
     if args.file_prefix is not None:
         file_prefix = args.file_prefix
 
-    print('starting Script', flush=True)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(ch)
+    
+    logger.info('starting script...')    
     fp = FpoNHM()
-
-    print('instantiated', flush=True)
+    logger.info('...instantiated')
 
     ready = fp.initialize(idir, odir, wght_file, type=extract_type, days=numdays,
                           start_date=startdate, end_date=enddate,
                           fileprefix=file_prefix)
     if ready:
-        print('initalized\n', flush=True)
-        print('running', flush=True)
+        logger.info('initalized\n')
+        logger.info('running')
         fp.run_weights()
-        print('finished running', flush=True)
+        logger.info('finished running')
         fp.finalize()
-        print('finalized', flush=True)
+        logger.info('finalized')
         sys.exit(0)
     else:
         if extract_type == 'days':
-            print('Gridmet not updated continue with numdays -1', flush=True)
+            logger.info('Gridmet not updated continue with numdays - 1')
             fp.setNumdays(numdays-1)
-            print('initalized\n', flush=True)
-            print('running', flush=True)
+            logger.info('initalized\n')
+            logger.info('running...')
             fp.run_weights()
-            print('finished running', flush=True)
+            logger.info('...finished running...')
             fp.finalize()
-            print('finalized', flush=True)
+            logger.info('...finalized')
             sys.exit(0)
         else:
-            print('error: extract did not return period specified, Gridmet not updated', flush=True)
+            logger.error('extract did not return period specified; Gridmet not updated', flush=True)
             sys.exit(1)
 
 if __name__ == "__main__":

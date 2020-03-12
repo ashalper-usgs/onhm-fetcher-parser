@@ -9,6 +9,7 @@ import requests
 from requests.exceptions import HTTPError
 from datetime import datetime
 from pathlib import Path
+import logging
 
 class FpoNHM:
     """ Class for fetching climate data and parsing into NetCDF
@@ -32,6 +33,15 @@ class FpoNHM:
             choice for data sources in the future.  Currently default is
             GridMet: http://www.climatologylab.org/gridmet.html
         """
+        
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
+        self.logger.addHandler(ch)
+
         self.climsource = climsource
         if climsource == 'GridMetSS':
             self.gmss_vars = {
@@ -144,12 +154,12 @@ class FpoNHM:
         self.end_date = end_date
         self.fileprefix = fileprefix
 
-        print(Path.cwd())
+        self.logger.info(Path.cwd())
         
         if self.type == 'date':
-            print(f'start_date: {self.start_date} and end_date: {self.end_date}', flush=True)
+            self.logger.info(f'start_date: {self.start_date} and end_date: {self.end_date}')
         else:
-            print(f'number of days: {self.numdays}', flush=True)
+            self.logger.info(f'number of days: {self.numdays}')
             
         # glob.glob produces different results on Windows and Linux. Adding sorted makes result consistent
         # filenames = sorted(glob.glob('*.shp'))
@@ -171,8 +181,7 @@ class FpoNHM:
         if self.type == 'date':
             self.numdays = ((self.end_date - self.start_date).days + 1)
             
-        # Download NetCDF subsetted data
-        #get_gm_url(type, dataset, numdays=None, startdate=None, enddate=None,  ctype='GridMetSS'):
+        # NetCDF subsetted data
         try:
             # Maximum Temperature
             self.str_start, tmxurl, tmxparams = get_gm_url(self.type, 'tmax', self.numdays,
@@ -206,17 +215,17 @@ class FpoNHM:
             wsfile.raise_for_status()
 
         except HTTPError as http_err:
-            print('HTTP error occured: {http_err}', flush=True)
+            print(f'HTTP error occured: {http_err}', flush=True)
             if self.numdays == 1:
                 sys.exit("numdays == 1: Gridmet not updated")
             else:
                 sys.exit("GridMet not available or a bad request")
         except Exception as err:
-            print('Other error occured: {err}', flush=True)
+            print(f'Other error occured: {err}', flush=True)
         else:
             print('Gridmet data retrieved!', flush=True)
 
-        # write downloaded data to local netcdf files and open as xarray
+        # write downloaded data to local NetCDF files and open as xarray
         ncfile = (self.iptpath / (self.fileprefix + 'tmax_' + (datetime.now().strftime('%Y_%m_%d')) + '.nc'),
                   self.iptpath / (self.fileprefix + 'tmin_' + str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
                   self.iptpath / (self.fileprefix + 'ppt_' + str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
@@ -360,6 +369,7 @@ class FpoNHM:
         tmp = 0
 
     def finalize(self):
+        # TODO: log?
         # print(os.getcwd())
         # os.chdir(self.optpath)
         print(Path.cwd(), flush=True)
