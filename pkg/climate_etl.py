@@ -95,7 +95,7 @@ def main():
     ch.setFormatter(formatter)
     logger.addHandler(ch)
     
-    logger.info('starting script...')    
+    logger.info('starting script...')
     fp = FpoNHM()
     logger.info('...instantiated')
 
