@@ -2,31 +2,24 @@ import geopandas as gpd
 import pandas as pd
 import netCDF4
 import numpy as np
-import glob
-# import rasterio
-import os
 import sys
 import xarray as xr
-#import json
-#from rasterstats import zonal_stats
-
-# from rasterio.transform import from_origin
-from helper import np_get_wval, get_gm_url, getxml
+from helper import np_get_wval, get_gm_url
 import requests
 from requests.exceptions import HTTPError
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 class FpoNHM:
-    """ Class for fetching climate data and parsing into netcdf
+    """ Class for fetching climate data and parsing into NetCDF
         input files for use with the USGS operational National Hydrologic
-        Model (oNHM).  Workflow:
+        Model (oNHM). Workflow:
             1) Initialize(): fetch climate data
             2) Run(): map/interpolate onto hru
             3) Finalize(): write netcdf input files
         Mapping options:
-            1) weighted average based on intersection area of hru
-                with netcdf file cells.
+            1) weighted average based on intersection area of HRU
+                with NetCDF file cells.
             2) rasterstats - zonal averaging
 
     """
@@ -37,7 +30,7 @@ class FpoNHM:
         :param  numdays: number of days past to retrieve
         :param climsource: Constant for now but may have multiple
             choice for data sources in the future.  Currently default is
-            GridMet:  http://www.climatologylab.org/gridmet.html
+            GridMet: http://www.climatologylab.org/gridmet.html
         """
         self.climsource = climsource
         if climsource == 'GridMetSS':
@@ -54,7 +47,7 @@ class FpoNHM:
 
         self.numdays = None
 
-        #prefix for file names - default is ''.
+        # prefix for file names - default is ''.
         self.fileprefix = None
 
         # xarray containers for tempurature max, temperature min and precipitation
@@ -65,7 +58,7 @@ class FpoNHM:
         self.dsrhmin = None
         self.dsws = None
 
-        # Geopandas dataframe that will hold hru id and geometry
+        # Geopandas dataframe that will hold HRU ID and geometry
         self.gdf = None
 
         # input and output path directories
@@ -79,7 +72,7 @@ class FpoNHM:
         self.start_date = None
         self.end_date = None
 
-        # handles to netcdf climate data
+        # handles to NetCDF climate data
         # Coordinates
         self.lat_h = None
         self.lon_h = None
@@ -101,7 +94,7 @@ class FpoNHM:
         # num HRUs
         self.num_hru = None
 
-        # grouby hru_id_nat on wieghts file
+        # group by hru_id_nat on wieghts file
         self.unique_hru_ids = None
 
         # numpy arrays to store mapped climate data
@@ -127,7 +120,7 @@ class FpoNHM:
 
         :param iptpath: directory containing hru shapefiles and weight file,
                         geotiffs if using rasterstats
-        :param optpath: directory to save netcdf input files
+        :param optpath: directory to save NetCDF input files
         :return: success or failure
         """
         self.iptpath = Path(iptpath)
@@ -147,45 +140,22 @@ class FpoNHM:
             print('weights file exits', self.wghts_file, flush=True)
         else:
             print('weights file not exist', flush=True)
+            
         self.wghts_id = None
         self.type = type
         self.numdays = days
         self.start_date = start_date
         self.end_date = end_date
         self.fileprefix = fileprefix
-        # #check tmax for available dates
-        # now = datetime.today().date()
-        # yesterday = now - timedelta(days=1)
-        # tdata = getxml()['gridDataset']['TimeSpan']['end']
-        # tenddate = datetime.strptime(tdata[:10],'%Y-%m-%d').date()
-        # if self.type == 'date':
-        #     if self.end_date.date() <= tenddate:
-        #         print('Gridmet is available for time period specified - proceeding with pull')
-        #     else:
-        #         print(f'Requested end date {self.end_date.date()} is greater than available Gridmet end date {tenddate}')
-        #         print('process exiting')
-        #         sys.exit(1)
-        # # else:
-        # #     print(f'Requested end date {self.end_date.date()} is greater than yesterdays (Gridment updated to yesterday) date {yesterday}')
-        # #     print('process exiting')
-        # #     sys.exit(1)
-        # else:
-        #     if yesterday <= tenddate:
-        #         print('Gridmet is updated - proceeding with pull')
-        #     else:
-        #         print(f'Requested end date {yesterday} is greater than available Gridmet end date {tenddate}')
-        #         print('process exiting')
-        #         sys.exit(1)
 
-        # print(os.getcwd())
-        # os.chdir(self.iptpath)
-        # print(os.getcwd())
         print(Path.cwd())
+        
         if self.type == 'date':
             print(f'start_date: {self.start_date} and end_date: {self.end_date}', flush=True)
         else:
             print(f'number of days: {self.numdays}', flush=True)
-        # glob.glob produces different results on Win and Linux. Adding sorted makes result consistent
+            
+        # glob.glob produces different results on Windows and Linux. Adding sorted makes result consistent
         # filenames = sorted(glob.glob('*.shp'))
         # use pathlib glob
         filenames = sorted(self.iptpath.glob('*.shp'))
@@ -201,23 +171,24 @@ class FpoNHM:
         rhminfile = None
         rhmaxfile = None
         wsfile = None
-        str_start = None
+
         if self.type == 'date':
             self.numdays = ((self.end_date - self.start_date).days + 1)
-        # Download netcdf subsetted data
+            
+        # Download NetCDF subsetted data
         #get_gm_url(type, dataset, numdays=None, startdate=None, enddate=None,  ctype='GridMetSS'):
         try:
-            #Maximum Temperature
+            # Maximum Temperature
             self.str_start, tmxurl, tmxparams = get_gm_url(self.type, 'tmax', self.numdays,
                                                            self.start_date, self.end_date)
             tmaxfile = requests.get(tmxurl, params=tmxparams)
             tmaxfile.raise_for_status()
-            #Minimum Temperature
+            # Minimum Temperature
             self.str_start, tmnurl, tmnparams = get_gm_url(self.type, 'tmin', self.numdays,
                                                         self.start_date, self.end_date)
             tminfile = requests.get(tmnurl, params=tmnparams)
             tminfile.raise_for_status()
-            #Precipitation
+            # Precipitation
             self.str_start, ppturl, pptparams = get_gm_url(self.type, 'ppt', self.numdays,
                                                            self.start_date, self.end_date)
             pptfile = requests.get(ppturl, params=pptparams)
@@ -289,15 +260,14 @@ class FpoNHM:
         # =========================================================
         # Get handles to shape/Lat/Lon/DataArray
         # All the datahandles including shape, lat, lon should be
-        # the same for each netcdf file.  In the future this may change
+        # the same for each NetCDF file. In the future this may change
         # but for now will open and assume these data handles are the
-        # same for each of the climate netcdf files, so grab them from dstmax.
+        # same for each of the climate NetCDF files, so grab them from dstmax.
         # =========================================================
 
         self.lat_h = self.dstmax['lat']
         self.lon_h = self.dstmax['lon']
         self.time_h = self.dstmax['day']
-        # self.crs_h = self.dstmax['crs']
 
         if self.climsource == 'GridMetSS':
             self.tmax_h = self.dstmax[self.gmss_vars['tmax']]
@@ -321,18 +291,13 @@ class FpoNHM:
         else:
             print('returned and expected days not equal', flush=True)
             return False
-        # else:
-        #     if self.dayshape == self.numdays:
-        #         return True
-        #     else:
-        #         return False
-
 
     def run_weights(self):
 
         # =========================================================
-        #       Read hru weights
+        #       Read HRU weights
         # =========================================================
+        
         # read the weights file
         wght_uofi = pd.read_csv(self.wghts_file)
         # grab the hru_id from the weights file and use as identifier below
@@ -359,15 +324,6 @@ class FpoNHM:
             rhmax = np.zeros(self.num_hru)
             rhmin = np.zeros(self.num_hru)
             ws = np.zeros(self.num_hru)
-            # =========================================================
-            #   flatten data arrays
-            # =========================================================
-            # tmax_h_flt = np.nan_to_num(self.tmax_h.values[day, :, :].flatten(order='K'))
-            # tmin_h_flt = np.nan_to_num(self.tmin_h.values[day, :, :].flatten(order='K'))
-            # tppt_h_flt = np.nan_to_num(self.tppt_h.values[day, :, :].flatten(order='K'))
-            # trhmax_h_flt = np.nan_to_num(self.rhmax_h.values[day, :, :].flatten(order='K'))
-            # trhmin_h_flt = np.nan_to_num(self.rhmin_h.values[day, :, :].flatten(order='K'))
-            # tws_h_flt = np.nan_to_num(self.ws_h.values[day, :, :].flatten(order='K'))
 
             tmax_h_flt = self.tmax_h.values[day, :, :].flatten(order='K')
             tmin_h_flt = self.tmin_h.values[day, :, :].flatten(order='K')
@@ -476,22 +432,18 @@ class FpoNHM:
         ws.units = 'm/s'
         ws.standard_name = 'daily_mean_wind_speed'
 
-
         # fill variables with available data
         def getxy(pt):
             return pt.x, pt.y
 
         centroidseries = self.gdf.geometry.centroid
         tlon, tlat = [list(t) for t in zip(*map(getxy, centroidseries))]
+        
         # print(lon, lat)
         time[:] = np.arange(0, self.numdays)
         lon[:] = tlon
         lat[:] = tlat
         hru[:] = self.gdf[self.wghts_id].values
-        # print(hruid)
-        # tmax[0,:] = gdf['tmax'].values
-        # tmin[0,:] = gdf['tmin'].values
-        # prcp[0,:] = gdf['ppt'].values
 
         tmax[:, :] = self.np_tmax[:, :]
         tmin[:, :] = self.np_tmin[:, :]
