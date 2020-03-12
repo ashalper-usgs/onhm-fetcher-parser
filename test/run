@@ -9,5 +9,6 @@
 
 /opt/conda/bin/python \
   -u ../pkg/climate_etl.py -t date \
-  -p 2019-08-21 2019-08-22 -i /tmp/nhm/ofp/nhm_hru_data \
-  -o /tmp/nhm/NHM-PRMS_CONUS/input -w /tmp/nhm/ofp/nhm_hru_data/weights.csv
+  -p 2019-08-21 2019-08-22 -i $HOME/workspace/nhm/nhm_hru_data \
+  -o $HOME/workspace/nhm/NHM-PRMS_CONUS/input \
+  -w $HOME/workspace/nhm/nhm_hru_data/weights.csv
