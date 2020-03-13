@@ -31,14 +31,16 @@ class FpoNHM:
         :param  numdays: number of days past to retrieve
         :param climsource: Constant for now but may have multiple
             choice for data sources in the future.  Currently default is
-            GridMet: http://www.climatologylab.org/gridmet.html
+            gridMET: http://www.climatologylab.org/gridmet.html
         """
         
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         ch = logging.StreamHandler()
         ch.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
         ch.setFormatter(formatter)
         self.logger.addHandler(ch)
 
@@ -114,7 +116,7 @@ class FpoNHM:
         # group by hru_id_nat on weights file
         self.unique_hru_ids = None
 
-        # numpy arrays to store mapped climate data
+        # NumPY arrays to store mapped climate data
         self.np_tmax = None
         self.np_tmin = None
         self.np_ppt = None
@@ -179,9 +181,6 @@ class FpoNHM:
                              sort=True).pipe(gpd.GeoDataFrame)
         self.gdf.reset_index(drop=True, inplace=True)
 
-        # See
-        # https://stackoverflow.com/questions/22934616/multi-line-logging-in-python
-        # to clean up this output.
         msg = 'in directory ' + str(filenames[0].parent) + ':'
         for f in filenames:
             msg = msg + ' ' + f.name + ','
@@ -239,13 +238,13 @@ class FpoNHM:
         except HTTPError as http_err:
             self.logger.error(f'HTTP error occured: {http_err}')
             if self.numdays == 1:
-                sys.exit("numdays == 1: Gridmet not updated")
+                sys.exit("numdays == 1: gridMET not updated")
             else:
-                sys.exit("GridMet not available or a bad request")
+                sys.exit("gridMET not available or a bad request")
         except Exception as err:
             self.logger.error(f'Other error occured: {err}')
         else:
-            self.logger.info('Gridmet data retrieved')
+            self.logger.info('gridMET data retrieved')
 
         # write downloaded data to local NetCDF files and open as xarray
         ncfile = (self.iptpath / (self.fileprefix + 'tmax_' + (datetime.now().strftime('%Y_%m_%d')) + '.nc'),
@@ -304,19 +303,20 @@ class FpoNHM:
             self.rhmin_h = self.dsrhmin[self.gmss_vars['rhmin']]
             self.ws_h = self.dsws[self.gmss_vars['ws']]
         else:
-            print('Error: climate source data not specified', flush=True)
+            self.logger.error('climate source data not specified')
 
         ts = self.tmax_h.sizes
         self.dayshape = ts['day']
         self.lonshape = ts['lon']
         self.latshape = ts['lat']
 
-        # if self.type == 'days':
-        print(f'Gridmet returned days = {self.dayshape} and expected number of days {self.numdays}', flush=True)
+        self.logger.info(
+            f'gridMET returned days = {self.dayshape} and expected number of days {self.numdays}'
+        )
         if self.dayshape == self.numdays:
             return True
         else:
-            print('returned and expected days not equal', flush=True)
+            self.logger.error('returned and expected days not equal')
             return False
 
     def run_weights(self):
@@ -327,15 +327,16 @@ class FpoNHM:
         
         # read the weights file
         wght_uofi = pd.read_csv(self.wghts_file)
-        # grab the hru_id from the weights file and use as identifier below
+        
+        # get hru_id from the weights file and use as identifier below
         self.wghts_id = wght_uofi.columns[1]
 
-        #group by the weights_id for processing
+        # group by the weights_id for processing
         self.unique_hru_ids = wght_uofi.groupby(self.wghts_id)
 
-        print('finished reading weight file', flush=True)
+        self.logger.info('finished reading weight file')
 
-        # intialize numpy arrays to store climate vars
+        # intialize NumPY arrays to store climate vars
         self.np_tmax = np.zeros((self.numdays, self.num_hru))
         self.np_tmin = np.zeros((self.numdays, self.num_hru))
         self.np_ppt = np.zeros((self.numdays, self.num_hru))
@@ -344,7 +345,7 @@ class FpoNHM:
         self.np_ws = np.zeros((self.numdays, self.num_hru))
 
         for day in np.arange(self.numdays):
-            print(day, flush=True)
+            self.logger.info(f'day: {day}')
             tmax = np.zeros(self.num_hru)
             tmin = np.zeros(self.num_hru)
             ppt = np.zeros(self.num_hru)
@@ -360,17 +361,16 @@ class FpoNHM:
             tws_h_flt = self.ws_h.values[day, :, :].flatten(order='K')
 
             for index, row in self.gdf.iterrows():
-                # weight_id_rows = wght_df_40.loc[wght_df_40[self.wghts_id] == row[self.wghts_id]]
                 weight_id_rows = self.unique_hru_ids.get_group(row[self.wghts_id])
-                tmax[index] = np.nan_to_num(np_get_wval(tmax_h_flt, weight_id_rows, index+1) - 273.5)
-                tmin[index] = np.nan_to_num(np_get_wval(tmin_h_flt, weight_id_rows, index+1) - 273.5)
-                ppt[index] = np.nan_to_num(np_get_wval(tppt_h_flt, weight_id_rows, index+1))
-                rhmax[index] = np.nan_to_num(np_get_wval(trhmax_h_flt, weight_id_rows, index+1))
-                rhmin[index] = np.nan_to_num(np_get_wval(trhmin_h_flt, weight_id_rows, index+1))
-                ws[index] = np.nan_to_num(np_get_wval(tws_h_flt, weight_id_rows, index+1))
+                tmax[index] = np.nan_to_num(np_get_wval(tmax_h_flt, weight_id_rows, index + 1) - 273.5)
+                tmin[index] = np.nan_to_num(np_get_wval(tmin_h_flt, weight_id_rows, index + 1) - 273.5)
+                ppt[index] = np.nan_to_num(np_get_wval(tppt_h_flt, weight_id_rows, index + 1))
+                rhmax[index] = np.nan_to_num(np_get_wval(trhmax_h_flt, weight_id_rows, index + 1))
+                rhmin[index] = np.nan_to_num(np_get_wval(trhmin_h_flt, weight_id_rows, index + 1))
+                ws[index] = np.nan_to_num(np_get_wval(tws_h_flt, weight_id_rows, index + 1))
 
                 if index % 10000 == 0:
-                    print(index, row[self.wghts_id], flush=True)
+                    self.logger.info(f'index: {index}, row: {row[self.wghts_id]}')
 
             self.np_tmax[day, :] = tmax
             self.np_tmin[day, :] = tmin
@@ -391,14 +391,11 @@ class FpoNHM:
         tmp = 0
 
     def finalize(self):
-        # TODO: log?
-        # print(os.getcwd())
-        # os.chdir(self.optpath)
-        print(Path.cwd(), flush=True)
+        self.logger.info(Path.cwd())
         ncfile = netCDF4.Dataset(self.optpath / (self.fileprefix + 'climate_' + str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
                                  mode='w', format='NETCDF4_CLASSIC')
 
-        # Global Attributes
+        # global attributes
         ncfile.Conventions = 'CF-1.8'
         ncfile.featureType = 'timeSeries'
         ncfile.history = ''
@@ -408,9 +405,10 @@ class FpoNHM:
         hruid_dim = ncfile.createDimension('hruid', sp_dim)  # hru_id
         time_dim = ncfile.createDimension('time', self.numdays)  # unlimited axis (can be appended to).
         for dim in ncfile.dimensions.items():
-            print(dim, flush=True)
+            self.logger.info(f'dim: {dim}')
 
-        # Create Variables
+        # create variables
+
         time = ncfile.createVariable('time', 'i', ('time',))
         time.long_name = 'time'
         time.standard_name = 'time'
@@ -466,8 +464,7 @@ class FpoNHM:
 
         centroidseries = self.gdf.geometry.centroid
         tlon, tlat = [list(t) for t in zip(*map(getxy, centroidseries))]
-        
-        # print(lon, lat)
+
         time[:] = np.arange(0, self.numdays)
         lon[:] = tlon
         lat[:] = tlat
@@ -481,7 +478,7 @@ class FpoNHM:
         ws[:, :] = self.np_ws[:, :]
 
         ncfile.close()
-        print("dataset is closed", flush=True)
+        self.logger.info("data set is closed")
 
     def setNumdays(self, num_d):
         self.numdays = num_d
