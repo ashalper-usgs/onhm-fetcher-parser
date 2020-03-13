@@ -16,7 +16,7 @@ class FpoNHM:
         input files for use with the USGS operational National Hydrologic
         Model (oNHM). Workflow:
             1) Initialize(): fetch climate data
-            2) Run(): map/interpolate onto hru
+            2) Run(): map/interpolate onto HRU
             3) Finalize(): write netcdf input files
         Mapping options:
             1) weighted average based on intersection area of HRU
@@ -137,7 +137,7 @@ class FpoNHM:
             1) initialize geopandas dataframe of concatenated hru_shapefiles
             2) initialize climate data using xarray
 
-        :param iptpath: directory containing hru shapefiles and weight file,
+        :param iptpath: directory containing HRU shapefiles and weight file,
                         geotiffs if using rasterstats
         :param optpath: directory to save NetCDF input files
         :return: success or failure
@@ -186,7 +186,7 @@ class FpoNHM:
             msg = msg + ' ' + f.name + ','
         self.logger.info(msg[:-1])
             
-        self.logger.info(self.gdf.head())
+        self.logger.debug(self.gdf.head())
 
         self.num_hru = len(self.gdf.index)
         tmaxfile = None
@@ -201,37 +201,51 @@ class FpoNHM:
             
         # NetCDF subsetted data
         try:
-            # Maximum Temperature
-            self.str_start, tmxurl, tmxparams = get_gm_url(self.type,
-                                                           'tmax',
-                                                           self.numdays,
-                                                           self.start_date,
-                                                           self.end_date)
+            # maximum temperature
+            self.str_start, tmxurl, tmxparams = get_gm_url(
+                self.type, 'tmax', self.numdays,
+                self.start_date, self.end_date
+            )
             tmaxfile = requests.get(tmxurl, params=tmxparams)
             tmaxfile.raise_for_status()
-            # Minimum Temperature
-            self.str_start, tmnurl, tmnparams = get_gm_url(self.type, 'tmin', self.numdays,
-                                                        self.start_date, self.end_date)
+            
+            # minimum temperature
+            self.str_start, tmnurl, tmnparams = get_gm_url(
+                self.type, 'tmin', self.numdays,
+                self.start_date, self.end_date
+            )
             tminfile = requests.get(tmnurl, params=tmnparams)
             tminfile.raise_for_status()
-            # Precipitation
-            self.str_start, ppturl, pptparams = get_gm_url(self.type, 'ppt', self.numdays,
-                                                           self.start_date, self.end_date)
+            
+            # precipitation
+            self.str_start, ppturl, pptparams = get_gm_url(
+                self.type, 'ppt', self.numdays,
+                self.start_date, self.end_date
+            )
             pptfile = requests.get(ppturl, params=pptparams)
             pptfile.raise_for_status()
-            # Maximum Relative Humidity
-            self.str_start, rhmaxurl, rhmaxparams = get_gm_url(self.type, 'rhmax', self.numdays,
-                                                           self.start_date, self.end_date)
+
+            # maximum relative humidity
+            self.str_start, rhmaxurl, rhmaxparams = get_gm_url(
+                self.type, 'rhmax', self.numdays,
+                self.start_date, self.end_date
+            )
             rhmaxfile = requests.get(rhmaxurl, params=rhmaxparams)
             rhmaxfile.raise_for_status()
-            # Minimum Relative Humidity
-            self.str_start, rhminurl, rhminparams = get_gm_url(self.type, 'rhmin', self.numdays,
-                                                           self.start_date, self.end_date)
+            
+            # minimum relative humidity
+            self.str_start, rhminurl, rhminparams = get_gm_url(
+                self.type, 'rhmin', self.numdays,
+                self.start_date, self.end_date
+            )
             rhminfile = requests.get(rhminurl, params=rhminparams)
             rhminfile.raise_for_status()
-            # Mean daily Wind Speed
-            self.str_start, wsurl, wsparams = get_gm_url(self.type, 'ws', self.numdays,
-                                                           self.start_date, self.end_date)
+
+            # mean daily wind speed
+            self.str_start, wsurl, wsparams = get_gm_url(
+                self.type, 'ws', self.numdays,
+                self.start_date, self.end_date
+            )
             wsfile = requests.get(wsurl, params=wsparams)
             wsfile.raise_for_status()
 
@@ -247,12 +261,24 @@ class FpoNHM:
             self.logger.info('gridMET data retrieved')
 
         # write downloaded data to local NetCDF files and open as xarray
-        ncfile = (self.iptpath / (self.fileprefix + 'tmax_' + (datetime.now().strftime('%Y_%m_%d')) + '.nc'),
-                  self.iptpath / (self.fileprefix + 'tmin_' + str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
-                  self.iptpath / (self.fileprefix + 'ppt_' + str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
-                  self.iptpath / (self.fileprefix + 'rhmax_' + str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
-                  self.iptpath / (self.fileprefix + 'rhmin_' + str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
-                  self.iptpath / (self.fileprefix + 'ws_' + str(datetime.now().strftime('%Y_%m_%d')) + '.nc'))
+        ncfile = (self.iptpath /
+                  (self.fileprefix + 'tmax_' +
+                   (datetime.now().strftime('%Y_%m_%d')) + '.nc'),
+                  self.iptpath /
+                  (self.fileprefix + 'tmin_' +
+                   str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
+                  self.iptpath /
+                  (self.fileprefix + 'ppt_' +
+                   str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
+                  self.iptpath /
+                  (self.fileprefix + 'rhmax_' +
+                   str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
+                  self.iptpath /
+                  (self.fileprefix + 'rhmin_' +
+                   str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
+                  self.iptpath /
+                  (self.fileprefix + 'ws_' +
+                   str(datetime.now().strftime('%Y_%m_%d')) + '.nc'))
 
         for index, tfile in enumerate(ncfile):
             with open(tfile, 'wb') as fh:
@@ -285,10 +311,12 @@ class FpoNHM:
 
         # =========================================================
         # Get handles to shape/Lat/Lon/DataArray
-        # All the datahandles including shape, lat, lon should be
-        # the same for each NetCDF file. In the future this may change
-        # but for now will open and assume these data handles are the
-        # same for each of the climate NetCDF files, so grab them from dstmax.
+        #
+        # All the datahandles including shape, lat, lon should be the
+        # same for each NetCDF file. In the future this may change but
+        # for now will open and assume these data handles are the same
+        # for each of the climate NetCDF files, so grab them from
+        # dstmax.
         # =========================================================
 
         self.lat_h = self.dstmax['lat']
@@ -311,7 +339,8 @@ class FpoNHM:
         self.latshape = ts['lat']
 
         self.logger.info(
-            f'gridMET returned days = {self.dayshape} and expected number of days {self.numdays}'
+            f'gridMET returned days = {self.dayshape} and expected ' +
+            'number of days {self.numdays}'
         )
         if self.dayshape == self.numdays:
             return True
@@ -361,16 +390,32 @@ class FpoNHM:
             tws_h_flt = self.ws_h.values[day, :, :].flatten(order='K')
 
             for index, row in self.gdf.iterrows():
-                weight_id_rows = self.unique_hru_ids.get_group(row[self.wghts_id])
-                tmax[index] = np.nan_to_num(np_get_wval(tmax_h_flt, weight_id_rows, index + 1) - 273.5)
-                tmin[index] = np.nan_to_num(np_get_wval(tmin_h_flt, weight_id_rows, index + 1) - 273.5)
-                ppt[index] = np.nan_to_num(np_get_wval(tppt_h_flt, weight_id_rows, index + 1))
-                rhmax[index] = np.nan_to_num(np_get_wval(trhmax_h_flt, weight_id_rows, index + 1))
-                rhmin[index] = np.nan_to_num(np_get_wval(trhmin_h_flt, weight_id_rows, index + 1))
-                ws[index] = np.nan_to_num(np_get_wval(tws_h_flt, weight_id_rows, index + 1))
+                weight_id_rows = self.unique_hru_ids.get_group(
+                    row[self.wghts_id]
+                )
+                tmax[index] = np.nan_to_num(
+                    np_get_wval(tmax_h_flt, weight_id_rows, index + 1) - 273.5
+                )
+                tmin[index] = np.nan_to_num(
+                    np_get_wval(tmin_h_flt, weight_id_rows, index + 1) - 273.5
+                    )
+                ppt[index] = np.nan_to_num(
+                    np_get_wval(tppt_h_flt, weight_id_rows, index + 1)
+                )
+                rhmax[index] = np.nan_to_num(
+                    np_get_wval(trhmax_h_flt, weight_id_rows, index + 1)
+                )
+                rhmin[index] = np.nan_to_num(
+                    np_get_wval(trhmin_h_flt, weight_id_rows, index + 1)
+                )
+                ws[index] = np.nan_to_num(
+                    np_get_wval(tws_h_flt, weight_id_rows, index + 1)
+                )
 
                 if index % 10000 == 0:
-                    self.logger.info(f'index: {index}, row: {row[self.wghts_id]}')
+                    self.logger.info(
+                        f'index: {index}, row: {row[self.wghts_id]}'
+                    )
 
             self.np_tmax[day, :] = tmax
             self.np_tmin[day, :] = tmin
@@ -392,8 +437,12 @@ class FpoNHM:
 
     def finalize(self):
         self.logger.info(Path.cwd())
-        ncfile = netCDF4.Dataset(self.optpath / (self.fileprefix + 'climate_' + str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
-                                 mode='w', format='NETCDF4_CLASSIC')
+        ncfile = netCDF4.Dataset(
+            self.optpath /
+            (self.fileprefix + 'climate_' +
+             str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
+            mode='w', format='NETCDF4_CLASSIC'
+        )
 
         # global attributes
         ncfile.Conventions = 'CF-1.8'
@@ -402,8 +451,11 @@ class FpoNHM:
 
         sp_dim = len(self.gdf.index)
 
-        hruid_dim = ncfile.createDimension('hruid', sp_dim)  # hru_id
-        time_dim = ncfile.createDimension('time', self.numdays)  # unlimited axis (can be appended to).
+        hruid_dim = ncfile.createDimension('hruid', sp_dim) # hru_id
+
+        # unlimited axis (can be appended to)
+        time_dim = ncfile.createDimension('time', self.numdays)
+        
         for dim in ncfile.dimensions.items():
             self.logger.info(f'dim: {dim}')
 
@@ -418,42 +470,58 @@ class FpoNHM:
         hru.cf_role = 'timeseries_id'
         hru.long_name = 'local model hru id'
 
-        lat = ncfile.createVariable('hru_lat', np.dtype(np.float32).char, ('hruid',))
+        lat = ncfile.createVariable(
+            'hru_lat', np.dtype(np.float32).char, ('hruid',)
+        )
         lat.long_name = 'Latitude of HRU centroid'
         lat.units = 'degrees_north'
         lat.standard_name = 'hru_latitude'
 
-        lon = ncfile.createVariable('hru_lon', np.dtype(np.float32).char, ('hruid',))
+        lon = ncfile.createVariable(
+            'hru_lon', np.dtype(np.float32).char, ('hruid',)
+        )
         lon.long_name = 'Longitude of HRU centroid'
         lon.units = 'degrees_east'
         lon.standard_name = 'hru_longitude'
 
-        prcp = ncfile.createVariable('prcp', np.dtype(np.float32).char, ('time', 'hruid'))
+        prcp = ncfile.createVariable(
+            'prcp', np.dtype(np.float32).char, ('time', 'hruid')
+        )
         prcp.long_name = 'Daily precipitation rate'
         prcp.units = 'mm/day'
         prcp.standard_name = 'lwe_precipitation_rate'
 
-        tmax = ncfile.createVariable('tmax', np.dtype(np.float32).char, ('time', 'hruid'))
+        tmax = ncfile.createVariable(
+            'tmax', np.dtype(np.float32).char, ('time', 'hruid')
+        )
         tmax.long_name = 'Maximum daily air temperature'
         tmax.units = 'degree_Celsius'
         tmax.standard_name = 'maximum_daily_air_temperature'
 
-        tmin = ncfile.createVariable('tmin', np.dtype(np.float32).char, ('time', 'hruid'))
+        tmin = ncfile.createVariable(
+            'tmin', np.dtype(np.float32).char, ('time', 'hruid')
+        )
         tmin.long_name = 'Minimum daily air temperature'
         tmin.units = 'degree_Celsius'
         tmin.standard_name = 'minimum_daily_air_temperature'
 
-        rhmax = ncfile.createVariable('rhmax', np.dtype(np.float32).char, ('time', 'hruid'))
+        rhmax = ncfile.createVariable(
+            'rhmax', np.dtype(np.float32).char, ('time', 'hruid')
+        )
         rhmax.long_name = 'Maximum daily relative humidity'
         rhmax.units = 'percent'
         rhmax.standard_name = 'daily_maximum_relative_humidity'
 
-        rhmin = ncfile.createVariable('rhmin', np.dtype(np.float32).char, ('time', 'hruid'))
+        rhmin = ncfile.createVariable(
+            'rhmin', np.dtype(np.float32).char, ('time', 'hruid')
+        )
         rhmin.long_name = 'Minimum daily relative humidity'
         rhmin.units = 'percent'
         rhmin.standard_name = 'daily_minimum_relative_humidity'
 
-        ws = ncfile.createVariable('ws', np.dtype(np.float32).char, ('time', 'hruid'))
+        ws = ncfile.createVariable(
+            'ws', np.dtype(np.float32).char, ('time', 'hruid')
+        )
         ws.long_name = 'Mean daily wind speed'
         ws.units = 'm/s'
         ws.standard_name = 'daily_mean_wind_speed'
