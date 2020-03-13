@@ -40,48 +40,47 @@ def gridmet_nc_to_geotiff(ds, time_index, path, filename, dsname):
 def np_get_wval(ndata, wghts, hru_id):
     """
     Returns weighted average of ndata with weights = grp
-    1) mdata = the subset of values associated with the gridmet id's that are mapped to hru_id.
-    2) Some of these values may have nans if the gridmet id is outside of conus so only return values
-    that are inside of conus
-    3) this means that hru's that are entirely outside of conus will return nans which will ultimately,
+    1) mdata = the subset of values associated with the gridMET IDs that are mapped to hru_id.
+    2) Some of these values may have NaNs if the gridMET ID is outside of CONUS so only return values
+    that are inside of CONUS
+    3) this means that HRUs that are entirely outside of CONUS will return NaNs which will ultimately,
     outside of this function get assigned zero's.
     4) the value is assigned the weighted average
     :param ndata: float array of data values
     :param wghts: float array of weights
     :param hru_id hru id number
-    :return: numpy weighted averaged - masked to deal with nans associated with
-            ndata that is outside of the conus.
+    :return: NumPY weighted averaged - masked to deal with nans associated with
+            ndata that is outside of the CONUS.
     """
     mdata = np.ma.masked_array(ndata[wghts['grid_ids'].values.astype(int)],
                                np.isnan(ndata[wghts['grid_ids'].values.astype(int)]))
 
-    # mdata = np.ma.masked_where(ndata[wghts['grid_ids'].values.astype(int)] <= 0.0,
-    #                            (ndata[wghts['grid_ids'].values.astype(int)]))
     tmp = np.ma.average(mdata, weights=wghts['w'])
     if tmp is masked:
         print('returning masked value for hru_id', hru_id)
         return np.nan
-
     else:
         return tmp
 
 
-def get_gm_url(type, dataset, numdays=None, startdate=None, enddate=None,  ctype='GridMetSS'):
+def get_gm_url(type, dataset, numdays=None, startdate=None, enddate=None,
+               ctype='GridMetSS'):
     """
-    This helper function returns a url and payload to be used with requests
-    to get climate data.  Returned values can be used in a request for example:
+    This helper function returns a URL and payload to be used with requests
+    to get climate data. Returned values can be used in a request for example:
     myfile = requests.get(url, params=payload)
 
     :param numdays: proceeding number of days to retrieve
     :param dataset: datset to retrieve can be:
         'tmax', 'tmin', 'ppt'
-    :param ctype: Type of url to retrieve:
+    :param ctype: Type of URL to retrieve:
         'GridMet':
     :return: URL for retrieving GridMet subset data and payload of options
     """
     sformat = "%Y-%m-%d"
     if type == 'days':
-        dt1 = dt.timedelta(days=1) # because Gridmet data release today is yesterdays data
+        # because gridMET data release today is yesterday's data
+        dt1 = dt.timedelta(days=1)
         dt2 = dt.timedelta(days=numdays)
 
         end = dt.datetime.now() - dt1
