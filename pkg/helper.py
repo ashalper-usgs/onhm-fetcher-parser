@@ -6,6 +6,7 @@ from numpy.ma import masked
 import traceback
 import logging
 
+# initialize logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
@@ -33,7 +34,7 @@ def gridmet_nc_to_geotiff(ds, time_index, path, filename, dsname):
     # get transform
     transform = from_origin(lonmin, latmax, lonres, latres)
 
-    # create geodiff from netcdf data
+    # create geodiff from NetCDF data
     file = path + filename
     new_dataset = rasterio.open(file, 'w',
                                 driver='GTiff',
