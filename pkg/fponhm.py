@@ -1,15 +1,15 @@
 import geopandas as gpd
-import pandas as pd
+import logging
 import netCDF4
 import numpy as np
+import pandas as pd
+import requests
 import sys
 import xarray as xr
-from helper import np_get_wval, get_gm_url
-import requests
-from requests.exceptions import HTTPError
 from datetime import datetime
+from helper import np_get_wval, get_gm_url
 from pathlib import Path
-import logging
+from requests.exceptions import HTTPError
 
 class FpoNHM:
     """ Class for fetching climate data and parsing into NetCDF
@@ -52,8 +52,9 @@ class FpoNHM:
                 'rhmin': 'daily_minimum_relative_humidity',
                 'ws': 'daily_mean_wind_speed'}
             
-        # type of retrieval (days) retrieve by previous number of days - used in operational mode
-        # or (date) used to retrieve specific period of time
+        # type of retrieval (days) retrieve by previous number of days
+        # - used in operational mode or (date) used to retrieve
+        # specific period of time
         self.type = None
 
         self.numdays = None
@@ -61,7 +62,8 @@ class FpoNHM:
         # prefix for file names - default is ''.
         self.fileprefix = None
 
-        # xarray containers for tempurature max, temperature min and precipitation
+        # xarray containers for temperature max., temperature min. and
+        # precipitation
         self.dstmax = None
         self.dstmin = None
         self.dsppt = None
@@ -84,12 +86,15 @@ class FpoNHM:
         self.end_date = None
 
         # handles to NetCDF climate data
+        
         # Coordinates
         self.lat_h = None
         self.lon_h = None
         self.time_h = None
+        
         # Geotransform
         self.crs_h = None
+        
         # Climate data
         self.tmax_h = None
         self.tmin_h = None
@@ -97,6 +102,7 @@ class FpoNHM:
         self.rhmax_h = None
         self.rhmin_h = None
         self.ws_h = None
+        
         # Dimensions
         self.dayshape = None
         self.lonshape = None
@@ -105,7 +111,7 @@ class FpoNHM:
         # num HRUs
         self.num_hru = None
 
-        # group by hru_id_nat on wieghts file
+        # group by hru_id_nat on weights file
         self.unique_hru_ids = None
 
         # numpy arrays to store mapped climate data
@@ -157,19 +163,29 @@ class FpoNHM:
         self.logger.info(Path.cwd())
         
         if self.type == 'date':
-            self.logger.info(f'start_date: {self.start_date} and end_date: {self.end_date}')
+            self.logger.info(
+                f'start_date: {self.start_date} and end_date: {self.end_date}'
+            )
         else:
             self.logger.info(f'number of days: {self.numdays}')
             
-        # glob.glob produces different results on Windows and Linux. Adding sorted makes result consistent
+        # glob.glob produces different results on Windows and
+        # Linux. Adding sorted makes result consistent.
         # filenames = sorted(glob.glob('*.shp'))
+        
         # use pathlib glob
         filenames = sorted(self.iptpath.glob('*.shp'))
-        self.gdf = pd.concat([gpd.read_file(f) for f in filenames], sort=True).pipe(gpd.GeoDataFrame)
+        self.gdf = pd.concat([gpd.read_file(f) for f in filenames],
+                             sort=True).pipe(gpd.GeoDataFrame)
         self.gdf.reset_index(drop=True, inplace=True)
-        
+
+        # See
+        # https://stackoverflow.com/questions/22934616/multi-line-logging-in-python
+        # to clean up this output.
+        msg = 'in directory ' + str(filenames[0].parent) + ':'
         for f in filenames:
-            self.logger.info(f)
+            msg = msg + ' ' + f.name + ','
+        self.logger.info(msg[:-1])
             
         self.logger.info(self.gdf.head())
 
@@ -187,8 +203,11 @@ class FpoNHM:
         # NetCDF subsetted data
         try:
             # Maximum Temperature
-            self.str_start, tmxurl, tmxparams = get_gm_url(self.type, 'tmax', self.numdays,
-                                                           self.start_date, self.end_date)
+            self.str_start, tmxurl, tmxparams = get_gm_url(self.type,
+                                                           'tmax',
+                                                           self.numdays,
+                                                           self.start_date,
+                                                           self.end_date)
             tmaxfile = requests.get(tmxurl, params=tmxparams)
             tmaxfile.raise_for_status()
             # Minimum Temperature
