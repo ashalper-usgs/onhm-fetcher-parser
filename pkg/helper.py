@@ -4,7 +4,17 @@ import numpy as np
 import datetime as dt
 from numpy.ma import masked
 import traceback
+import logging
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
 
 def gridmet_nc_to_geotiff(ds, time_index, path, filename, dsname):
 
@@ -57,7 +67,7 @@ def np_get_wval(ndata, wghts, hru_id):
 
     tmp = np.ma.average(mdata, weights=wghts['w'])
     if tmp is masked:
-        print('returning masked value for hru_id', hru_id)
+        logger.info(f'returning masked value for hru_id {hru_id}')
         return np.nan
     else:
         return tmp
@@ -134,12 +144,11 @@ def getxml():
     import urllib3
     import xmltodict
 
-
     http = urllib3.PoolManager()
 
     response = http.request('GET', url)
     try:
         data = xmltodict.parse(response.data)
     except:
-        print("Failed to parse xml from response (%s)" % traceback.format_exc())
+        logger.error("Failed to parse xml from response (%s)" % traceback.format_exc())
     return data
