@@ -206,6 +206,7 @@ class FpoNHM:
                 self.type, 'tmax', self.numdays,
                 self.start_date, self.end_date
             )
+            self.logger.debug(f'GET {tmxurl}')
             tmaxfile = requests.get(tmxurl, params=tmxparams)
             tmaxfile.raise_for_status()
             
@@ -214,6 +215,7 @@ class FpoNHM:
                 self.type, 'tmin', self.numdays,
                 self.start_date, self.end_date
             )
+            self.logger.debug(f'GET {tmnurl}')
             tminfile = requests.get(tmnurl, params=tmnparams)
             tminfile.raise_for_status()
             
@@ -222,6 +224,7 @@ class FpoNHM:
                 self.type, 'ppt', self.numdays,
                 self.start_date, self.end_date
             )
+            self.logger.debug(f'GET {ppturl}')
             pptfile = requests.get(ppturl, params=pptparams)
             pptfile.raise_for_status()
 
@@ -230,6 +233,7 @@ class FpoNHM:
                 self.type, 'rhmax', self.numdays,
                 self.start_date, self.end_date
             )
+            self.logger.debug(f'GET {rhmaxurl}')
             rhmaxfile = requests.get(rhmaxurl, params=rhmaxparams)
             rhmaxfile.raise_for_status()
             
@@ -238,6 +242,7 @@ class FpoNHM:
                 self.type, 'rhmin', self.numdays,
                 self.start_date, self.end_date
             )
+            self.logger.debug(f'GET {rhminurl}')
             rhminfile = requests.get(rhminurl, params=rhminparams)
             rhminfile.raise_for_status()
 
@@ -246,6 +251,7 @@ class FpoNHM:
                 self.type, 'ws', self.numdays,
                 self.start_date, self.end_date
             )
+            self.logger.debug(f'GET {wsurl}')
             wsfile = requests.get(wsurl, params=wsparams)
             wsfile.raise_for_status()
 
@@ -339,8 +345,7 @@ class FpoNHM:
         self.latshape = ts['lat']
 
         self.logger.info(
-            f'gridMET returned days = {self.dayshape} and expected ' +
-            'number of days {self.numdays}'
+            f'gridMET returned days = {self.dayshape} and expected number of days {self.numdays}'
         )
         if self.dayshape == self.numdays:
             return True
