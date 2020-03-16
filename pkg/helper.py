@@ -1,10 +1,10 @@
-import rasterio
-from rasterio.transform import from_origin
-import numpy as np
 import datetime as dt
-from numpy.ma import masked
-import traceback
 import logging
+import numpy as np
+import rasterio
+import traceback
+from numpy.ma import masked
+from rasterio.transform import from_origin
 
 # initialize logger
 logger = logging.getLogger(__name__)
@@ -16,6 +16,8 @@ formatter = logging.Formatter(
 )
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
+prefix = 'http://thredds.northwestknowledge.net:8080/thredds/ncss'
 
 def gridmet_nc_to_geotiff(ds, time_index, path, filename, dsname):
 
@@ -51,20 +53,24 @@ def gridmet_nc_to_geotiff(ds, time_index, path, filename, dsname):
 def np_get_wval(ndata, wghts, hru_id):
     """
     Returns weighted average of ndata with weights = grp
-    1) mdata = the subset of values associated with the gridMET IDs that are mapped to hru_id.
-    2) Some of these values may have NaNs if the gridMET ID is outside of CONUS so only return values
-    that are inside of CONUS
-    3) this means that HRUs that are entirely outside of CONUS will return NaNs which will ultimately,
-    outside of this function get assigned zero's.
+    1) mdata = the subset of values associated with the gridMET IDs
+       that are mapped to hru_id.
+    2) Some of these values may have NaNs if the gridMET ID is outside
+       of CONUS so only return values that are inside of CONUS.
+    3) this means that HRUs that are entirely outside of CONUS will
+       return NaNs which will ultimately, outside of this function get
+       assigned zero's.
     4) the value is assigned the weighted average
     :param ndata: float array of data values
     :param wghts: float array of weights
     :param hru_id hru id number
-    :return: NumPY weighted averaged - masked to deal with nans associated with
-            ndata that is outside of the CONUS.
+    :return: NumPY weighted averaged - masked to deal with NaNs
+             associated with ndata that is outside of the CONUS.
     """
-    mdata = np.ma.masked_array(ndata[wghts['grid_ids'].values.astype(int)],
-                               np.isnan(ndata[wghts['grid_ids'].values.astype(int)]))
+    mdata = np.ma.masked_array(
+        ndata[wghts['grid_ids'].values.astype(int)],
+        np.isnan(ndata[wghts['grid_ids'].values.astype(int)])
+    )
 
     tmp = np.ma.average(mdata, weights=wghts['w'])
     if tmp is masked:
@@ -77,8 +83,10 @@ def np_get_wval(ndata, wghts, hru_id):
 def get_gm_url(type, dataset, numdays=None, startdate=None, enddate=None,
                ctype='GridMetSS'):
     """
-    This helper function returns a URL and payload to be used with requests
-    to get climate data. Returned values can be used in a request for example:
+    This helper function returns a URL and payload to be used with
+    requests to get climate data. Returned values can be used in a
+    request for example:
+
     myfile = requests.get(url, params=payload)
 
     :param numdays: proceeding number of days to retrieve
@@ -86,7 +94,8 @@ def get_gm_url(type, dataset, numdays=None, startdate=None, enddate=None,
         'tmax', 'tmin', 'ppt'
     :param ctype: Type of URL to retrieve:
         'GridMet':
-    :return: URL for retrieving GridMet subset data and payload of options
+    :return: URL for retrieving GridMet subset data and payload of
+             options
     """
     sformat = "%Y-%m-%d"
     if type == 'days':
@@ -106,25 +115,25 @@ def get_gm_url(type, dataset, numdays=None, startdate=None, enddate=None,
 
     dsvar = None
     url = None
-    if ctype == 'GridMetSS': #extract data using NetcdfSubset service
+    if ctype == 'GridMetSS': # extract data using NetcdfSubset service
         if dataset == 'tmax':
             dsvar = 'daily_maximum_temperature'
-            url = 'http://thredds.northwestknowledge.net:8080/thredds/ncss/agg_met_tmmx_1979_CurrentYear_CONUS.nc'
+            url = f'{prefix}/agg_met_tmmx_1979_CurrentYear_CONUS.nc'
         elif dataset == 'tmin':
             dsvar = 'daily_minimum_temperature'
-            url = 'http://thredds.northwestknowledge.net:8080/thredds/ncss/agg_met_tmmn_1979_CurrentYear_CONUS.nc'
+            url = f'{prefix}/agg_met_tmmn_1979_CurrentYear_CONUS.nc'
         elif dataset == 'ppt':
             dsvar = 'precipitation_amount'
-            url = 'http://thredds.northwestknowledge.net:8080/thredds/ncss/agg_met_pr_1979_CurrentYear_CONUS.nc'
+            url = f'{prefix}/agg_met_pr_1979_CurrentYear_CONUS.nc'
         elif dataset == 'rhmax':
             dsvar = 'daily_maximum_relative_humidity'
-            url = 'http://thredds.northwestknowledge.net:8080/thredds/ncss/grid/agg_met_rmax_1979_CurrentYear_CONUS.nc'
+            url = f'{prefix}/grid/agg_met_rmax_1979_CurrentYear_CONUS.nc'
         elif dataset == 'rhmin':
             dsvar = 'daily_minimum_relative_humidity'
-            url = 'http://thredds.northwestknowledge.net:8080/thredds/ncss/grid/agg_met_rmin_1979_CurrentYear_CONUS.nc'
+            url = f'{prefix}/grid/agg_met_rmin_1979_CurrentYear_CONUS.nc'
         elif dataset == 'ws':
             dsvar = 'daily_mean_wind_speed'
-            url = 'http://thredds.northwestknowledge.net:8080/thredds/ncss/grid/agg_met_vs_1979_CurrentYear_CONUS.nc'
+            url = f'{prefix}/grid/agg_met_vs_1979_CurrentYear_CONUS.nc'
         payload = {
             'var': dsvar,
             'north': '49.4000',
@@ -141,7 +150,7 @@ def get_gm_url(type, dataset, numdays=None, startdate=None, enddate=None,
         return str_start_cf, url, payload
 
 def getxml():
-    url = "http://thredds.northwestknowledge.net:8080/thredds/ncss/grid/agg_met_tmmx_1979_CurrentYear_CONUS.nc/dataset.xml"
+    url = f'{prefix}/grid/agg_met_tmmx_1979_CurrentYear_CONUS.nc/dataset.xml'
     import urllib3
     import xmltodict
 
@@ -151,5 +160,7 @@ def getxml():
     try:
         data = xmltodict.parse(response.data)
     except:
-        logger.error("Failed to parse xml from response (%s)" % traceback.format_exc())
+        logger.error(
+            "Failed to parse XML from response (%s)" % traceback.format_exc()
+        )
     return data
