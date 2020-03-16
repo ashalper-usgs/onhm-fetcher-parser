@@ -17,7 +17,7 @@ class FpoNHM:
         Model (oNHM). Workflow:
             1) Initialize(): fetch climate data
             2) Run(): map/interpolate onto HRU
-            3) Finalize(): write netcdf input files
+            3) Finalize(): write NetCDF input files
         Mapping options:
             1) weighted average based on intersection area of HRU
                 with NetCDF file cells.
