@@ -7,7 +7,7 @@
 #  Author - Andrew Halper <ashalper@usgs.gov>
 #
 
-/opt/conda/bin/python \
+python \
   -u ../pkg/climate_etl.py -t date \
   -p 2019-08-21 2019-08-22 -i $HOME/workspace/nhm/nhm_hru_data \
   -o $HOME/workspace/nhm/NHM-PRMS_CONUS/input \
