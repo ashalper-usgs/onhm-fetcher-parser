@@ -2,6 +2,7 @@ import argparse
 import datetime
 import logging
 import sys
+import time
 from fponhm import FpoNHM
 
 def valid_date(s):
@@ -11,6 +12,13 @@ def valid_date(s):
         msg = "Not a valid date: '{0}'.".format(s)
         raise argparse.ArgumentTypeError(msg)
 
+# convenience function to log time spent in a function
+def log_time_elapsed(logger, function_name, time_in):
+    logger.debug(
+        '{:s} ran in {:.{prec}f} seconds'.format(function_name,
+                                                 time.time() - time_in, prec=0)
+    )
+        
 def main():
     numdays = None
     startdate = None
@@ -116,15 +124,22 @@ def main():
     fp = FpoNHM()
     logger.info('...instantiated')
 
+    time_in = time.time()
     ready = fp.initialize(idir, odir, wght_file, type=extract_type,
                           days=numdays, start_date=startdate,
                           end_date=enddate, fileprefix=file_prefix)
+    log_time_elapsed(logger, 'FpoNHM().initialize', time_in)
+    
     if ready:
         logger.info('initialized')
         logger.info('running')
+        time_in = time.time()
         fp.run_weights()
+        log_time_elapsed(logger, 'FpoNHM().run_weights()', time_in)
         logger.info('finished running')
+        time_in = time.time()
         fp.finalize()
+        log_time_elapsed(logger, 'FpoNHM().finalize()', time_in)
         logger.info('finalized')
         sys.exit(0)
     else:
