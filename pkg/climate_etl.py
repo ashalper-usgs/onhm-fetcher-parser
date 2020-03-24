@@ -5,6 +5,16 @@ import sys
 import time
 from fponhm import FpoNHM
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+    
 def valid_date(s):
     try:
         return datetime.datetime.strptime(s, "%Y-%m-%d")
@@ -13,7 +23,7 @@ def valid_date(s):
         raise argparse.ArgumentTypeError(msg)
 
 # convenience function to log time spent in a function
-def log_time_elapsed(logger, function_name, time_in):
+def log_time_elapsed(function_name, time_in):
     logger.debug(
         '{:s} ran in {:.{prec}f} seconds'.format(function_name,
                                                  time.time() - time_in, prec=0)
@@ -110,16 +120,6 @@ def main():
     if args.file_prefix is not None:
         file_prefix = args.file_prefix
 
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-    
     logger.info('starting script...')
     fp = FpoNHM()
     logger.info('...instantiated')
@@ -128,20 +128,19 @@ def main():
     ready = fp.initialize(idir, odir, wght_file, type=extract_type,
                           days=numdays, start_date=startdate,
                           end_date=enddate, fileprefix=file_prefix)
-    log_time_elapsed(logger, 'FpoNHM().initialize', time_in)
+    log_time_elapsed('FpoNHM().initialize', time_in)
     
     if ready:
         logger.info('initialized')
         logger.info('running')
         time_in = time.time()
         fp.run_weights()
-        log_time_elapsed(logger, 'FpoNHM().run_weights()', time_in)
+        log_time_elapsed('FpoNHM().run_weights()', time_in)
         logger.info('finished running')
         time_in = time.time()
         fp.finalize()
-        log_time_elapsed(logger, 'FpoNHM().finalize()', time_in)
+        log_time_elapsed('FpoNHM().finalize()', time_in)
         logger.info('finalized')
-        sys.exit(0)
     else:
         if extract_type == 'days':
             logger.info('gridMET not updated continue with numdays - 1')
@@ -152,7 +151,6 @@ def main():
             logger.info('...finished running...')
             fp.finalize()
             logger.info('...finalized')
-            sys.exit(0)
         else:
             logger.error(
                 'extract did not return period specified; gridMET not updated'
@@ -160,4 +158,6 @@ def main():
             sys.exit(1)
 
 if __name__ == "__main__":
+    time_in = time.time()
     main()
+    log_time_elapsed('main()', time_in)
