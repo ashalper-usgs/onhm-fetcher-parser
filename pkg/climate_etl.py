@@ -4,8 +4,9 @@ import logging
 import sys
 import time
 from fponhm import FpoNHM
+from nhm_logging import NHMLogger
 
-logger = logging.getLogger(__name__)
+logger = NHMLogger.manager.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
