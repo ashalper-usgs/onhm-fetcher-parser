@@ -128,18 +128,18 @@ def main():
     ready = fp.initialize(idir, odir, wght_file, type=extract_type,
                           days=numdays, start_date=startdate,
                           end_date=enddate, fileprefix=file_prefix)
-    log_time_elapsed('FpoNHM().initialize', time_in)
+    log_time_elapsed('FpoNHM.initialize()', time_in)
     
     if ready:
         logger.info('initialized')
         logger.info('running')
         time_in = time.time()
         fp.run_weights()
-        log_time_elapsed('FpoNHM().run_weights()', time_in)
+        log_time_elapsed('FpoNHM.run_weights()', time_in)
         logger.info('finished running')
         time_in = time.time()
         fp.finalize()
-        log_time_elapsed('FpoNHM().finalize()', time_in)
+        log_time_elapsed('FpoNHM.finalize()', time_in)
         logger.info('finalized')
     else:
         if extract_type == 'days':
