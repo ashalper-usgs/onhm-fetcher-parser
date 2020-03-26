@@ -52,7 +52,8 @@ class FpoNHM:
                 'ppt': 'precipitation_amount',
                 'rhmax': 'daily_maximum_relative_humidity',
                 'rhmin': 'daily_minimum_relative_humidity',
-                'ws': 'daily_mean_wind_speed'}
+                'ws': 'daily_mean_wind_speed'
+            }
             
         # type of retrieval (days) retrieve by previous number of days
         # - used in operational mode or (date) used to retrieve
@@ -189,13 +190,9 @@ class FpoNHM:
         self.logger.debug(self.gdf.head())
 
         self.num_hru = len(self.gdf.index)
-        tmaxfile = None
-        tminfile = None
-        pptfile = None
-        rhminfile = None
-        rhmaxfile = None
-        wsfile = None
 
+        f = {}
+        
         if self.type == 'date':
             self.numdays = ((self.end_date - self.start_date).days + 1)
             
@@ -207,8 +204,8 @@ class FpoNHM:
                 self.start_date, self.end_date
             )
             self.logger.debug(f'GET {tmxurl}')
-            tmaxfile = requests.get(tmxurl, params=tmxparams)
-            tmaxfile.raise_for_status()
+            f['tmax'] = requests.get(tmxurl, params=tmxparams)
+            f['tmax'].raise_for_status()
             
             # minimum temperature
             self.str_start, tmnurl, tmnparams = get_gm_url(
@@ -216,8 +213,8 @@ class FpoNHM:
                 self.start_date, self.end_date
             )
             self.logger.debug(f'GET {tmnurl}')
-            tminfile = requests.get(tmnurl, params=tmnparams)
-            tminfile.raise_for_status()
+            f['tmin'] = requests.get(tmnurl, params=tmnparams)
+            f['tmin'].raise_for_status()
             
             # precipitation
             self.str_start, ppturl, pptparams = get_gm_url(
@@ -225,8 +222,8 @@ class FpoNHM:
                 self.start_date, self.end_date
             )
             self.logger.debug(f'GET {ppturl}')
-            pptfile = requests.get(ppturl, params=pptparams)
-            pptfile.raise_for_status()
+            f['ppt'] = requests.get(ppturl, params=pptparams)
+            f['ppt'].raise_for_status()
 
             # maximum relative humidity
             self.str_start, rhmaxurl, rhmaxparams = get_gm_url(
@@ -234,8 +231,8 @@ class FpoNHM:
                 self.start_date, self.end_date
             )
             self.logger.debug(f'GET {rhmaxurl}')
-            rhmaxfile = requests.get(rhmaxurl, params=rhmaxparams)
-            rhmaxfile.raise_for_status()
+            f['rhmax'] = requests.get(rhmaxurl, params=rhmaxparams)
+            f['rhmax'].raise_for_status()
             
             # minimum relative humidity
             self.str_start, rhminurl, rhminparams = get_gm_url(
@@ -243,8 +240,8 @@ class FpoNHM:
                 self.start_date, self.end_date
             )
             self.logger.debug(f'GET {rhminurl}')
-            rhminfile = requests.get(rhminurl, params=rhminparams)
-            rhminfile.raise_for_status()
+            f['rhmin'] = requests.get(rhminurl, params=rhminparams)
+            f['rhmin'].raise_for_status()
 
             # mean daily wind speed
             self.str_start, wsurl, wsparams = get_gm_url(
@@ -252,8 +249,8 @@ class FpoNHM:
                 self.start_date, self.end_date
             )
             self.logger.debug(f'GET {wsurl}')
-            wsfile = requests.get(wsurl, params=wsparams)
-            wsfile.raise_for_status()
+            f['ws'] = requests.get(wsurl, params=wsparams)
+            f['ws'].raise_for_status()
 
         except HTTPError as http_err:
             self.logger.error(f'HTTP error occured: {http_err}')
@@ -268,42 +265,30 @@ class FpoNHM:
 
         # write downloaded data to local NetCDF files and open as xarray
 
-        ncfile = []
+        ncfile = {}
         for gmss_var in self.gmss_vars.keys():
-            ncfile.append(
-                self.iptpath /
+            ncfile[gmss_var] = (self.iptpath /
                 (self.fileprefix + gmss_var + '_' +
                  (datetime.now().strftime('%Y_%m_%d')) + '.nc')
             )
-
-        for tfile in ncfile:
-            with open(tfile, 'wb') as fh:
-                if tfile.name.startswith('tmax'):
-                    fh.write(tmaxfile.content)
-                elif tfile.name.startswith('tmin'):
-                    fh.write(tminfile.content)
-                elif tfile.name.startswith('ppt'):
-                    fh.write(pptfile.content)
-                elif tfile.name.startswith('rhmax'):
-                    fh.write(rhmaxfile.content)
-                elif tfile.name.startswith('rhmin'):
-                    fh.write(rhminfile.content)
-                elif tfile.name.startswith('ws'):
-                    fh.write(wsfile.content)
+                
+        for gmss_var in ncfile.keys():
+            with open(ncfile[gmss_var], 'wb') as fh:
+                fh.write(f[gmss_var].content)
 
             fh.close()
-            if tfile.name.startswith('tmax'):
-                self.dstmax = xr.open_dataset(tfile)
-            elif tfile.name.startswith('tmin'):
-                self.dstmin = xr.open_dataset(tfile)
-            elif tfile.name.startswith('ppt'):
-                self.dsppt = xr.open_dataset(tfile)
-            elif tfile.name.startswith('rhmax'):
-                self.dsrhmax = xr.open_dataset(tfile)
-            elif tfile.name.startswith('rhmin'):
-                self.dsrhmin = xr.open_dataset(tfile)
-            elif tfile.name.startswith('ws'):
-                self.dsws = xr.open_dataset(tfile)
+            if ncfile[gmss_var].name.startswith('tmax'):
+                self.dstmax = xr.open_dataset(ncfile[gmss_var])
+            elif ncfile[gmss_var].name.startswith('tmin'):
+                self.dstmin = xr.open_dataset(ncfile[gmss_var])
+            elif ncfile[gmss_var].name.startswith('ppt'):
+                self.dsppt = xr.open_dataset(ncfile[gmss_var])
+            elif ncfile[gmss_var].name.startswith('rhmax'):
+                self.dsrhmax = xr.open_dataset(ncfile[gmss_var])
+            elif ncfile[gmss_var].name.startswith('rhmin'):
+                self.dsrhmin = xr.open_dataset(ncfile[gmss_var])
+            elif ncfile[gmss_var].name.startswith('ws'):
+                self.dsws = xr.open_dataset(ncfile[gmss_var])
 
         # =========================================================
         # Get handles to shape/Lat/Lon/DataArray
