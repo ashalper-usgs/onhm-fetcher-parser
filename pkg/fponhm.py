@@ -198,60 +198,14 @@ class FpoNHM:
             
         # NetCDF subsetted data
         try:
-            # maximum temperature
-            self.str_start, tmxurl, tmxparams = get_gm_url(
-                self.type, 'tmax', self.numdays,
-                self.start_date, self.end_date
-            )
-            self.logger.debug(f'GET {tmxurl}')
-            f['tmax'] = requests.get(tmxurl, params=tmxparams)
-            f['tmax'].raise_for_status()
-            
-            # minimum temperature
-            self.str_start, tmnurl, tmnparams = get_gm_url(
-                self.type, 'tmin', self.numdays,
-                self.start_date, self.end_date
-            )
-            self.logger.debug(f'GET {tmnurl}')
-            f['tmin'] = requests.get(tmnurl, params=tmnparams)
-            f['tmin'].raise_for_status()
-            
-            # precipitation
-            self.str_start, ppturl, pptparams = get_gm_url(
-                self.type, 'ppt', self.numdays,
-                self.start_date, self.end_date
-            )
-            self.logger.debug(f'GET {ppturl}')
-            f['ppt'] = requests.get(ppturl, params=pptparams)
-            f['ppt'].raise_for_status()
-
-            # maximum relative humidity
-            self.str_start, rhmaxurl, rhmaxparams = get_gm_url(
-                self.type, 'rhmax', self.numdays,
-                self.start_date, self.end_date
-            )
-            self.logger.debug(f'GET {rhmaxurl}')
-            f['rhmax'] = requests.get(rhmaxurl, params=rhmaxparams)
-            f['rhmax'].raise_for_status()
-            
-            # minimum relative humidity
-            self.str_start, rhminurl, rhminparams = get_gm_url(
-                self.type, 'rhmin', self.numdays,
-                self.start_date, self.end_date
-            )
-            self.logger.debug(f'GET {rhminurl}')
-            f['rhmin'] = requests.get(rhminurl, params=rhminparams)
-            f['rhmin'].raise_for_status()
-
-            # mean daily wind speed
-            self.str_start, wsurl, wsparams = get_gm_url(
-                self.type, 'ws', self.numdays,
-                self.start_date, self.end_date
-            )
-            self.logger.debug(f'GET {wsurl}')
-            f['ws'] = requests.get(wsurl, params=wsparams)
-            f['ws'].raise_for_status()
-
+            for gmss_var in self.gmss_vars.keys():
+                self.str_start, url, params = get_gm_url(
+                    self.type, gmss_var, self.numdays,
+                    self.start_date, self.end_date
+                )
+                self.logger.debug(f'GET {url}')
+                f[gmss_var] = requests.get(url, params=params)
+                f[gmss_var].raise_for_status()
         except HTTPError as http_err:
             self.logger.error(f'HTTP error occured: {http_err}')
             if self.numdays == 1:
@@ -259,7 +213,7 @@ class FpoNHM:
             else:
                 sys.exit("gridMET not available or a bad request")
         except Exception as err:
-            self.logger.error(f'Other error occured: {err}')
+            self.logger.error(f'other error occured: {err}')
         else:
             self.logger.info('gridMET data retrieved')
 
