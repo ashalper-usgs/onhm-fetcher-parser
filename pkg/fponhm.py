@@ -214,18 +214,15 @@ class FpoNHM:
 
         # write downloaded data to local NetCDF files and open as xarray
 
-        ncfile = {}
         for gmss_var in self.gmss_vars.keys():
-            ncfile[gmss_var] = (self.iptpath /
+            ncfile = (self.iptpath /
                 (self.fileprefix + gmss_var + '_' +
                  (datetime.now().strftime('%Y_%m_%d')) + '.nc')
             )
-                
-        for gmss_var in ncfile.keys():
-            with open(ncfile[gmss_var], 'wb') as fh:
+            with open(ncfile, 'wb') as fh:
                 fh.write(f[gmss_var].content)
             fh.close()
-            self.ds[gmss_var] = xr.open_dataset(ncfile[gmss_var])
+            self.ds[gmss_var] = xr.open_dataset(ncfile)
 
         # =========================================================
         # Get handles to shape/Lat/Lon/DataArray
