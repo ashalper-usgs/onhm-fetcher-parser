@@ -267,52 +267,42 @@ class FpoNHM:
             self.logger.info('gridMET data retrieved')
 
         # write downloaded data to local NetCDF files and open as xarray
-        ncfile = (self.iptpath /
-                  (self.fileprefix + 'tmax_' +
-                   (datetime.now().strftime('%Y_%m_%d')) + '.nc'),
-                  self.iptpath /
-                  (self.fileprefix + 'tmin_' +
-                   str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
-                  self.iptpath /
-                  (self.fileprefix + 'ppt_' +
-                   str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
-                  self.iptpath /
-                  (self.fileprefix + 'rhmax_' +
-                   str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
-                  self.iptpath /
-                  (self.fileprefix + 'rhmin_' +
-                   str(datetime.now().strftime('%Y_%m_%d')) + '.nc'),
-                  self.iptpath /
-                  (self.fileprefix + 'ws_' +
-                   str(datetime.now().strftime('%Y_%m_%d')) + '.nc'))
 
-        for index, tfile in enumerate(ncfile):
+        ncfile = []
+        for gmss_var in self.gmss_vars.keys():
+            ncfile.append(
+                self.iptpath /
+                (self.fileprefix + gmss_var + '_' +
+                 (datetime.now().strftime('%Y_%m_%d')) + '.nc')
+            )
+
+        for tfile in ncfile:
             with open(tfile, 'wb') as fh:
-                if index == 0:
+                if tfile.name.startswith('tmax'):
                     fh.write(tmaxfile.content)
-                elif index == 1:
+                elif tfile.name.startswith('tmin'):
                     fh.write(tminfile.content)
-                elif index == 2:
+                elif tfile.name.startswith('ppt'):
                     fh.write(pptfile.content)
-                elif index == 3:
+                elif tfile.name.startswith('rhmax'):
                     fh.write(rhmaxfile.content)
-                elif index == 4:
+                elif tfile.name.startswith('rhmin'):
                     fh.write(rhminfile.content)
-                elif index == 5:
+                elif tfile.name.startswith('ws'):
                     fh.write(wsfile.content)
 
             fh.close()
-            if index == 0:
+            if tfile.name.startswith('tmax'):
                 self.dstmax = xr.open_dataset(tfile)
-            elif index == 1:
+            elif tfile.name.startswith('tmin'):
                 self.dstmin = xr.open_dataset(tfile)
-            elif index == 2:
+            elif tfile.name.startswith('ppt'):
                 self.dsppt = xr.open_dataset(tfile)
-            elif index == 3:
+            elif tfile.name.startswith('rhmax'):
                 self.dsrhmax = xr.open_dataset(tfile)
-            elif index == 4:
+            elif tfile.name.startswith('rhmin'):
                 self.dsrhmin = xr.open_dataset(tfile)
-            elif index == 5:
+            elif tfile.name.startswith('ws'):
                 self.dsws = xr.open_dataset(tfile)
 
         # =========================================================
