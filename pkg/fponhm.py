@@ -67,12 +67,7 @@ class FpoNHM:
 
         # xarray containers for temperature max., temperature min. and
         # precipitation
-        self.dstmax = None
-        self.dstmin = None
-        self.dsppt = None
-        self.dsrhmax = None
-        self.dsrhmin = None
-        self.dsws = None
+        self.ds = {}
 
         # Geopandas dataframe that will hold HRU ID and geometry
         self.gdf = None
@@ -229,20 +224,8 @@ class FpoNHM:
         for gmss_var in ncfile.keys():
             with open(ncfile[gmss_var], 'wb') as fh:
                 fh.write(f[gmss_var].content)
-
             fh.close()
-            if ncfile[gmss_var].name.startswith('tmax'):
-                self.dstmax = xr.open_dataset(ncfile[gmss_var])
-            elif ncfile[gmss_var].name.startswith('tmin'):
-                self.dstmin = xr.open_dataset(ncfile[gmss_var])
-            elif ncfile[gmss_var].name.startswith('ppt'):
-                self.dsppt = xr.open_dataset(ncfile[gmss_var])
-            elif ncfile[gmss_var].name.startswith('rhmax'):
-                self.dsrhmax = xr.open_dataset(ncfile[gmss_var])
-            elif ncfile[gmss_var].name.startswith('rhmin'):
-                self.dsrhmin = xr.open_dataset(ncfile[gmss_var])
-            elif ncfile[gmss_var].name.startswith('ws'):
-                self.dsws = xr.open_dataset(ncfile[gmss_var])
+            self.ds[gmss_var] = xr.open_dataset(ncfile[gmss_var])
 
         # =========================================================
         # Get handles to shape/Lat/Lon/DataArray
@@ -254,17 +237,17 @@ class FpoNHM:
         # dstmax.
         # =========================================================
 
-        self.lat_h = self.dstmax['lat']
-        self.lon_h = self.dstmax['lon']
-        self.time_h = self.dstmax['day']
+        self.lat_h = self.ds['tmax']['lat']
+        self.lon_h = self.ds['tmax']['lon']
+        self.time_h = self.ds['tmax']['day']
 
         if self.climsource == 'GridMetSS':
-            self.tmax_h = self.dstmax[self.gmss_vars['tmax']]
-            self.tmin_h = self.dstmin[self.gmss_vars['tmin']]
-            self.tppt_h = self.dsppt[self.gmss_vars['ppt']]
-            self.rhmax_h = self.dsrhmax[self.gmss_vars['rhmax']]
-            self.rhmin_h = self.dsrhmin[self.gmss_vars['rhmin']]
-            self.ws_h = self.dsws[self.gmss_vars['ws']]
+            self.tmax_h = self.ds['tmax'][self.gmss_vars['tmax']]
+            self.tmin_h = self.ds['tmin'][self.gmss_vars['tmin']]
+            self.tppt_h = self.ds['ppt'][self.gmss_vars['ppt']]
+            self.rhmax_h = self.ds['rhmax'][self.gmss_vars['rhmax']]
+            self.rhmin_h = self.ds['rhmin'][self.gmss_vars['rhmin']]
+            self.ws_h = self.ds['ws'][self.gmss_vars['ws']]
         else:
             self.logger.error('climate source data not specified')
 
@@ -359,12 +342,8 @@ class FpoNHM:
             self.np_ws[day, :] = ws
 
         # close xarray datasets
-        self.dstmax.close()
-        self.dstmin.close()
-        self.dsppt.close()
-        self.dsrhmax.close()
-        self.dsrhmin.close()
-        self.dsws.close()
+        for gmss_var in self.gmss_vars.keys():
+            self.ds[gmss_var].close()
 
     def run_rasterstat(self):
         tmp = 0
