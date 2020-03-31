@@ -1,15 +1,15 @@
+import asyncio
 import geopandas as gpd
 import logging
 import netCDF4
 import numpy as np
 import pandas as pd
-import requests
 import sys
 import xarray as xr
+from aiohttp import ClientSession
 from datetime import datetime
 from helper import np_get_wval, get_gm_url
 from pathlib import Path
-from requests.exceptions import HTTPError
 
 class FpoNHM:
     """ Class for fetching climate data and parsing into NetCDF
@@ -126,6 +126,27 @@ class FpoNHM:
         # Starting date based on numdays
         self.str_start = None
 
+    async def fetch(self, session, gmss_var, url, params):
+        async with session.get(url, params=params) as response:
+            response = await response.read()
+            return (gmss_var, response)
+
+    async def run(self, requests):
+        tasks = []
+
+        # Fetch all responses within one Client session, keep connection
+        # alive for all requests.
+        async with ClientSession() as session:
+            for gmss_var in requests.keys():
+                url, params = requests[gmss_var]
+                task = asyncio.ensure_future(
+                    self.fetch(session, gmss_var, url, params)
+                )
+                tasks.append(task)
+
+            responses = await asyncio.gather(*tasks)
+            return responses
+
     def initialize(self, iptpath, optpath, weights_file, type=None, days=None,
                    start_date=None, end_date=None, fileprefix=''):
         """
@@ -192,37 +213,37 @@ class FpoNHM:
             self.numdays = ((self.end_date - self.start_date).days + 1)
             
         # NetCDF subsetted data
-        try:
-            for gmss_var in self.gmss_vars.keys():
-                self.str_start, url, params = get_gm_url(
-                    self.type, gmss_var, self.numdays,
-                    self.start_date, self.end_date
-                )
-                self.logger.debug(f'GET {url}')
-                f[gmss_var] = requests.get(url, params=params)
-                f[gmss_var].raise_for_status()
-        except HTTPError as http_err:
-            self.logger.error(f'HTTP error occured: {http_err}')
-            if self.numdays == 1:
-                sys.exit("numdays == 1: gridMET not updated")
-            else:
-                sys.exit("gridMET not available or a bad request")
-        except Exception as err:
-            self.logger.error(f'other error occured: {err}')
-        else:
-            self.logger.info('gridMET data retrieved')
+
+        requests = {}
+        for gmss_var in self.gmss_vars.keys():
+            self.str_start, url, params = get_gm_url(
+                self.type, gmss_var, self.numdays,
+                self.start_date, self.end_date
+            )
+            requests[gmss_var] = (url, params)
+
+        loop = asyncio.get_event_loop()
+        future = asyncio.ensure_future(self.run(requests))
+        responses = loop.run_until_complete(future)
 
         # write downloaded data to local NetCDF files and open as xarray
 
-        for gmss_var in self.gmss_vars.keys():
+        # Here, "responses" should be a list of tuples, where the
+        # first element is gmss_var, and the second element is the
+        # HTTP GET request's response content. See "return" statment
+        # in fetch().
+        
+        # TODO: this can ultimately be async I/O, integrated with
+        # async HTTP requests above
+        for r in responses:
             ncfile = (self.iptpath /
-                (self.fileprefix + gmss_var + '_' +
+                (self.fileprefix + r[0] + '_' +
                  (datetime.now().strftime('%Y_%m_%d')) + '.nc')
             )
             with open(ncfile, 'wb') as fh:
-                fh.write(f[gmss_var].content)
+                fh.write(r[1])
             fh.close()
-            self.ds[gmss_var] = xr.open_dataset(ncfile)
+            self.ds[r[0]] = xr.open_dataset(ncfile)
 
         # =========================================================
         # Get handles to shape/Lat/Lon/DataArray
