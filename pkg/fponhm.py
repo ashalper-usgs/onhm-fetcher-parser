@@ -69,7 +69,7 @@ class FpoNHM:
         # precipitation
         self.ds = {}
 
-        # Geopandas dataframe that will hold HRU ID and geometry
+        # GeoPandas dataframe that will hold HRU ID and geometry
         self.gdf = None
 
         # input and output path directories
@@ -144,6 +144,8 @@ class FpoNHM:
                 )
                 tasks.append(task)
 
+            # TODO: HTTP error handling. See
+            # https://realpython.com/async-io-python/#a-full-program-asynchronous-requests
             responses = await asyncio.gather(*tasks)
             return responses
 
@@ -151,7 +153,7 @@ class FpoNHM:
                    start_date=None, end_date=None, fileprefix=''):
         """
         Initialize the fp_ohm class:
-            1) initialize geopandas dataframe of concatenated hru_shapefiles
+            1) initialize GeoPandas dataframe of concatenated hru_shapefiles
             2) initialize climate data using xarray
 
         :param iptpath: directory containing HRU shapefiles and weight file,
@@ -207,8 +209,6 @@ class FpoNHM:
 
         self.num_hru = len(self.gdf.index)
 
-        f = {}
-        
         if self.type == 'date':
             self.numdays = ((self.end_date - self.start_date).days + 1)
             
@@ -363,9 +363,6 @@ class FpoNHM:
         for gmss_var in self.gmss_vars.keys():
             self.ds[gmss_var].close()
 
-    def run_rasterstat(self):
-        tmp = 0
-
     def finalize(self):
         self.logger.info(Path.cwd())
         ncfile = netCDF4.Dataset(
@@ -380,13 +377,6 @@ class FpoNHM:
         ncfile.featureType = 'timeSeries'
         ncfile.history = ''
 
-        sp_dim = len(self.gdf.index)
-
-        hruid_dim = ncfile.createDimension('hruid', sp_dim) # hru_id
-
-        # unlimited axis (can be appended to)
-        time_dim = ncfile.createDimension('time', self.numdays)
-        
         for dim in ncfile.dimensions.items():
             self.logger.info(f'dim: {dim}')
 
