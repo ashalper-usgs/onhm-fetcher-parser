@@ -128,15 +128,15 @@ class FpoNHM:
 
     async def fetch(self, session, gmss_var, url, params):
         async with session.get(url, params=params) as response:
-            response = await response.read()
-            return (gmss_var, response)
+            response.raise_for_status()
+            r = await response.read()
+            return (gmss_var, r)
 
-    async def run(self, requests):
-        tasks = []
-
+    async def nkn_transfer(self, requests):
         # Fetch all responses within one Client session, keep connection
         # alive for all requests.
         async with ClientSession() as session:
+            tasks = []
             for gmss_var in requests.keys():
                 url, params = requests[gmss_var]
                 task = asyncio.ensure_future(
@@ -223,9 +223,9 @@ class FpoNHM:
             requests[gmss_var] = (url, params)
 
         loop = asyncio.get_event_loop()
-        future = asyncio.ensure_future(self.run(requests))
-        responses = loop.run_until_complete(future)
-
+        responses = loop.run_until_complete(self.nkn_transfer(requests))
+        loop.close()
+        
         # write downloaded data to local NetCDF files and open as xarray
 
         # Here, "responses" should be a list of tuples, where the
