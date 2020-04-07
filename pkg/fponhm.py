@@ -30,7 +30,7 @@ class FpoNHM:
 
         :param  numdays: number of days past to retrieve
         :param climsource: Constant for now but may have multiple
-            choice for data sources in the future.  Currently default is
+            choice for data sources in the future. Currently default is
             gridMET: http://www.climatologylab.org/gridmet.html
         """
         
@@ -126,13 +126,13 @@ class FpoNHM:
         # Starting date based on numdays
         self.str_start = None
 
-    async def fetch(self, session, gmss_var, url, params):
+    async def get(self, session, gmss_var, url, params):
         async with session.get(url, params=params) as response:
             response.raise_for_status()
             r = await response.read()
             return (gmss_var, r)
 
-    async def nkn_transfer(self, requests):
+    async def write(self, requests):
         # Fetch all responses within one Client session, keep connection
         # alive for all requests.
         async with ClientSession() as session:
@@ -140,7 +140,7 @@ class FpoNHM:
             for gmss_var in requests.keys():
                 url, params = requests[gmss_var]
                 task = asyncio.ensure_future(
-                    self.fetch(session, gmss_var, url, params)
+                    self.get(session, gmss_var, url, params)
                 )
                 tasks.append(task)
 
@@ -223,15 +223,15 @@ class FpoNHM:
             requests[gmss_var] = (url, params)
 
         loop = asyncio.get_event_loop()
-        responses = loop.run_until_complete(self.nkn_transfer(requests))
+        responses = loop.run_until_complete(self.write(requests))
         loop.close()
         
         # write downloaded data to local NetCDF files and open as xarray
 
         # Here, "responses" should be a list of tuples, where the
         # first element is gmss_var, and the second element is the
-        # HTTP GET request's response content. See "return" statment
-        # in fetch().
+        # HTTP GET request's response content. See also, return
+        # statement in get().
         
         # TODO: this can ultimately be async I/O, integrated with
         # async HTTP requests above
