@@ -240,20 +240,23 @@ class FpoNHM:
                   self.fileprefix + 'ws_' + str(datetime.now().strftime('%Y_%m_%d')) + '.nc',)
 
         for index, tfile in enumerate(ncfile):
-            with open(tfile, 'wb') as fh:
-                if index == 0:
-                    fh.write(tmaxfile.content)
-                elif index == 1:
-                    fh.write(tminfile.content)
-                elif index == 2:
-                    fh.write(pptfile.content)
-                elif index == 3:
-                    fh.write(rhmaxfile.content)
-                elif index == 4:
-                    fh.write(rhminfile.content)
-                elif index == 5:
-                    fh.write(wsfile.content)
-
+            try:
+                with open(tfile, 'wb') as fh:
+                    if index == 0:
+                        fh.write(tmaxfile.content)
+                    elif index == 1:
+                        fh.write(tminfile.content)
+                    elif index == 2:
+                        fh.write(pptfile.content)
+                    elif index == 3:
+                        fh.write(rhmaxfile.content)
+                    elif index == 4:
+                        fh.write(rhminfile.content)
+                    elif index == 5:
+                        fh.write(wsfile.content)
+            except:
+                print("when trying to open " + tfile)
+    
             fh.close()
             if index == 0:
                 self.dstmax = xr.open_dataset(tfile)
